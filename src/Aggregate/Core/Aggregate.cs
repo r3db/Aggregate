@@ -3,10 +3,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Alea;
+using Alea.CSharp;
 using Alea.Parallel;
 
 namespace Aggregate
 {
+    // http://docs.nvidia.com/gameworks/index.html#developertools/desktop/debugging_cuda_application.htm
+    // http://http.developer.nvidia.com/NsightVisualStudio/3.0/Documentation/UserGuide/HTML/Content/CUDA_Warp_Watch.htm
     internal static class Aggregate
     {
         // CPU: Using Sequential Loop!
@@ -53,6 +56,48 @@ namespace Aggregate
         {
             // Todo: What I really wanted was to return Int64.
             return Gpu.Default.Aggregate(array, (a, b) => a + b);
+        }
+
+        internal static long ComputeGpu2(int[] array)
+        {
+            var threads = 1024;
+            var blocks = array.Length / threads;
+
+            var result = new long[threads];
+            var lp = new LaunchParam(blocks, threads, threads * sizeof(int));
+
+            Gpu.Default.Launch(() =>
+            {
+                var shared = __shared__.ExternArray<int>();
+                var myId = threadIdx.x + blockDim.x * blockIdx.x;
+                var tid  = threadIdx.x;
+
+                shared[tid] = array[myId];
+                DeviceFunction.SyncThreads();
+
+                for (int s = blockDim.x / 2; s > 0; s >>= 1)
+                {
+                    if (tid < s)
+                    {
+                        shared[tid] += shared[tid + s];
+                    }
+
+                    DeviceFunction.SyncThreads();
+                }
+
+                if (tid == 0)
+                {
+                    result[blockIdx.x] = shared[0];
+                }
+            }, lp);
+
+            // Todo: This aggregate is not yet fully functional!
+            //if (result.Length > 1)
+            //{
+            //    return ComputeGpu2(result);
+            //}
+
+            return result.Sum();
         }
     }
 }
