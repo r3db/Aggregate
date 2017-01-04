@@ -2,12 +2,14 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Alea;
+using Alea.Parallel;
 
 namespace Aggregate
 {
     internal static class Aggregate
     {
-        // CPU: (Sum) Using Sequential Loop!
+        // CPU: Using Sequential Loop!
         internal static long ComputeCpu1(int[] array)
         {
             var result = 0L;
@@ -21,7 +23,7 @@ namespace Aggregate
             return result;
         }
 
-        // CPU: (Sum) Using Parallel ForEach!
+        // CPU: Using Parallel ForEach!
         internal static long ComputeCpu2(int[] array)
         {
             var result = 0L;
@@ -34,16 +36,23 @@ namespace Aggregate
             return result;
         }
 
-        // CPU: (Sum) Using Linq!
+        // CPU: Using Linq!
         internal static long ComputeCpu3(int[] array)
         {
             return array.Aggregate(0L, (a, b) => a + b);
         }
 
-        // CPU: (Sum) Using Parallel Linq
+        // CPU: Using Parallel Linq!
         internal static long ComputeCpu4(int[] array)
         {
             return array.AsParallel().Aggregate(0L, (a, b) => a + b);
+        }
+
+        // GPU: Using Aggregate!
+        internal static long ComputeGpu1(int[] array)
+        {
+            // Todo: What I really wanted was to return Int64.
+            return Gpu.Default.Aggregate(array, (a, b) => a + b);
         }
     }
 }

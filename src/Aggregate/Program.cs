@@ -11,12 +11,15 @@ namespace Aggregate
             const int length = 260000000;
             var data = Enumerable.Range(1, length).ToArray();
 
-            Measure(() => Aggregate.ComputeCpu1(data), "CPU: (Sum) Using Sequential Loop!");
-            Measure(() => Aggregate.ComputeCpu2(data), "CPU: (Sum) Using Parallel ForEach!");
-            Measure(() => Aggregate.ComputeCpu3(data), "CPU: (Sum) Using Linq!");
-            Measure(() => Aggregate.ComputeCpu4(data), "CPU: (Sum) Using Parallel Linq!");
+            Measure(() => Aggregate.ComputeCpu1(data), "CPU: Using Sequential Loop!");
+            Measure(() => Aggregate.ComputeCpu2(data), "CPU: Using Parallel ForEach!");
+            Measure(() => Aggregate.ComputeCpu3(data), "CPU: Using Linq!");
+            Measure(() => Aggregate.ComputeCpu4(data), "CPU: Using Parallel Linq!");
+            Measure(() => Aggregate.ComputeGpu1(data), "GPU: Using Parallel Linq!");
 
             Console.WriteLine("Expected: {0:D}", length * ((long)length + 1) / 2);
+            // In case of overflow we display display. Alea does not have Aggregates has flexible as traditional Linq.
+            Console.WriteLine("Expected: {0:D}", unchecked((int)(length * ((long)length + 1) / 2)));
 
             Console.WriteLine("Done!");
             Console.ReadLine();
