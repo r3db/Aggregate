@@ -11,10 +11,10 @@ namespace Aggregate
             const int length = 260000000;
             var data = Enumerable.Range(1, length).ToArray();
 
-            Measure(() => Aggregate.ComputeCpu1(data), "CPU: (Sum) Using Native Sequential Loop!");
-            Measure(() => Aggregate.ComputeCpu2(data), "CPU: (Sum) Using Parallel.ForEach!");
-            Measure(() => Aggregate.ComputeCpu3(data), "CPU: (Sum) Using Linq Aggregate!");
-            Measure(() => Aggregate.ComputeCpu4(data), "CPU: (Sum) Using Linq Aggregate in Parallel!");
+            Measure(() => Aggregate.ComputeCpu1(data), "CPU: (Sum) Using Sequential Loop!");
+            Measure(() => Aggregate.ComputeCpu2(data), "CPU: (Sum) Using Parallel ForEach!");
+            Measure(() => Aggregate.ComputeCpu3(data), "CPU: (Sum) Using Linq!");
+            Measure(() => Aggregate.ComputeCpu4(data), "CPU: (Sum) Using Parallel Linq!");
 
             Console.WriteLine("Expected: {0:D}", length * ((long)length + 1) / 2);
 
