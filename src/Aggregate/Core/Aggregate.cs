@@ -68,12 +68,12 @@ namespace Aggregate
         {
             var tb = 1024;
             var bc = (array.Length + (tb - 1)) / tb;
-            var lp = new LaunchParam(bc, tb, bc);
+            var lp = new LaunchParam(bc, tb, tb * sizeof(int));
 
-            //Console.WriteLine("-------------");
-            //Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, bc);
-            //Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, tb);
-            //Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * bc);
+            Console.WriteLine("-------------");
+            Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, bc);
+            Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, tb);
+            Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * tb);
 
             var result = new int[bc];
 
@@ -109,8 +109,9 @@ namespace Aggregate
                 }
             }, lp);
 
-            // Todo: Remove!
             return result.Sum();
+            // ReSharper disable once TailRecursiveCall
+            //return bc > 1 ? ComputeGpu2(result) : result[0];
         }
 
         //internal static int ComputeGpu2(int[] array)
