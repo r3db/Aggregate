@@ -14,6 +14,7 @@ namespace Aggregate
     {
         // Done!
         // CPU: Using Sequential Loop!
+        internal static int ComputeCpu1(int[] array)
         {
             var result = 0;
 
@@ -43,7 +44,7 @@ namespace Aggregate
         // CPU: Using Linq!
         internal static long ComputeCpu3(int[] array)
         {
-            return array.Aggregate(0L, (a, b) => a + b);
+            return array.Aggregate(0, (a, b) => a + b);
         }
 
         // CPU: Using Parallel Linq!
