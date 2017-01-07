@@ -62,19 +62,12 @@ namespace Aggregate
             return Gpu.Default.Aggregate(array, (a, b) => a + b);
         }
 
-        // Todo: Go Full GPU!
         // GPU: Interleaved Addressing!
         internal static int ComputeGpu2(int[] array)
         {
             var tb = 1024;
             var bc = (array.Length + (tb - 1)) / tb;
-            var lp = new LaunchParam(bc, tb, tb * sizeof(int));
-
-            Console.WriteLine("-------------");
-            Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, bc);
-            Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, tb);
-            Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * tb);
-
+            var lp = CreateLaunchParam(bc, tb, tb * sizeof(int));
             var result = new int[bc];
 
             Gpu.Default.Launch(() =>
@@ -109,9 +102,17 @@ namespace Aggregate
                 }
             }, lp);
 
-            return result.Sum();
-            // ReSharper disable once TailRecursiveCall
-            //return bc > 1 ? ComputeGpu2(result) : result[0];
+            return bc > 1 ? ComputeGpu2(result) : result[0];
+        }
+
+        private static LaunchParam CreateLaunchParam(int gridDim, int blockDim, int sharedMemorySize)
+        {
+            //Console.WriteLine("-------------");
+            //Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, gridDim);
+            //Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, blockDim);
+            //Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * blockDim);
+
+            return new LaunchParam(gridDim, blockDim, sharedMemorySize);
         }
 
         //internal static int ComputeGpu2(int[] array)
