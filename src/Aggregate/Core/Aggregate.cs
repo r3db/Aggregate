@@ -62,12 +62,18 @@ namespace Aggregate
             return Gpu.Default.Aggregate(array, (a, b) => a + b);
         }
 
+        // Todo: Go Full GPU!
         // GPU: Interleaved Addressing!
         internal static int ComputeGpu2(int[] array)
         {
-            var tb = 32;
+            var tb = 1024;
             var bc = (array.Length + (tb - 1)) / tb;
-            var lp = new LaunchParam(bc, tb, sizeof(int) * bc);
+            var lp = new LaunchParam(bc, tb, bc);
+
+            //Console.WriteLine("-------------");
+            //Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, bc);
+            //Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, tb);
+            //Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * bc);
 
             var result = new int[bc];
 
