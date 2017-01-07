@@ -1,6 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Alea;
 using Alea.CSharp;
@@ -14,15 +15,15 @@ namespace Aggregate
     {
         // Done!
         // CPU: Using Sequential Loop!
-        internal static int ComputeCpu1(int[] array)
+        internal static T ComputeCpu1<T>(T[] array, Func<T, T, T> op)
         {
-            var result = 0;
+            var result = default(T);
 
             // ReSharper disable once ForCanBeConvertedToForeach
             // ReSharper disable once LoopCanBeConvertedToQuery
             for (var i = 0; i < array.Length; i++)
             {
-                result += array[i];
+                result = op(result, array[i]);
             }
 
             return result;
@@ -30,49 +31,55 @@ namespace Aggregate
 
         // Done!
         // CPU: Using Parallel ForEach!
-        internal static int ComputeCpu2(int[] array)
+        internal static T ComputeCpu2<T>(IEnumerable<T> array, Func<T, T, T> op)
         {
-            var result = 0;
+            var result = default(T);
+            var locker = new object();
 
-            Parallel.ForEach(array, () => 0, (value, state, local) => local + value, x =>
+            Parallel.ForEach(array, () => default(T), (value, state, local) => op(local, value), x =>
             {
-                Interlocked.Add(ref result, x);
+                // Todo: There are better ways of doing this!
+                lock (locker)
+                {
+                    result = op(result, x);
+                }
             });
 
             return result;
         }
 
         // CPU: Using Linq!
-        internal static int ComputeCpu3(int[] array)
+        internal static T ComputeCpu3<T>(IEnumerable<T> array, Func<T, T, T> op)
         {
-            return array.Aggregate(0, (a, b) => a + b);
+            return array.Aggregate(op);
         }
 
         // Done!
         // CPU: Using Parallel Linq!
-        internal static int ComputeCpu4(int[] array)
+        internal static T ComputeCpu4<T>(IEnumerable<T> array, Func<T, T, T> op)
         {
-            return array.AsParallel().Aggregate(0, (a, b) => a + b);
+            return array.AsParallel().Aggregate(op);
         }
 
         // Done!
         // GPU: Using Alea Aggregate!
-        internal static int ComputeGpu1(int[] array)
+        internal static T ComputeGpu1<T>(T[] array, Func<T, T, T> op)
         {
-            return Gpu.Default.Aggregate(array, (a, b) => a + b);
+            return Gpu.Default.Aggregate(array, op);
         }
 
         // GPU: Interleaved Addressing!
-        internal static int ComputeGpu2(int[] array)
+        [GpuManaged]
+        internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
             var tb = 1024;
             var bc = (array.Length + (tb - 1)) / tb;
-            var lp = CreateLaunchParam(bc, tb, tb * sizeof(int));
-            var result = new int[bc];
+            var lp = CreateLaunchParam(bc, tb, tb * Marshal.SizeOf(typeof(T)));
+            var result = new T[bc];
 
             Gpu.Default.Launch(() =>
             {
-                var shared = __shared__.ExternArray<int>();
+                var shared = __shared__.ExternArray<T>();
                 
                 var tid = threadIdx.x;
                 var bid = blockIdx.x;
@@ -90,7 +97,7 @@ namespace Aggregate
                 {
                     if (tid % (2 * s) == 0)
                     {
-                        shared[tid] += shared[tid + s];
+                        shared[tid] = op(shared[tid], shared[tid + s]);
                     }
 
                     DeviceFunction.SyncThreads();
@@ -102,10 +109,10 @@ namespace Aggregate
                 }
             }, lp);
 
-            //return result.Sum();
+            //return array.Aggregate(op);
 
             // ReSharper disable once TailRecursiveCall
-            return bc > 1 ? ComputeGpu2(result) : result[0];
+            return bc > 1 ? ComputeGpu2(result, op) : result[0];
         }
 
         private static LaunchParam CreateLaunchParam(int gridDim, int blockDim, int sharedMemorySize)

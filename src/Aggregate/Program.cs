@@ -13,15 +13,17 @@ namespace Aggregate
             var data = Enumerable.Range(1, length).Select(x => x % 3).ToArray();
             var expected = data.Sum();
 
-            Measure(() => Aggregate.ComputeCpu1(data), expected, "CPU: Using Sequential Loop!");
-            Measure(() => Aggregate.ComputeCpu2(data), expected, "CPU: Using Parallel ForEach!");
-            Measure(() => Aggregate.ComputeCpu3(data), expected, "CPU: Using Linq!");
-            Measure(() => Aggregate.ComputeCpu4(data), expected, "CPU: Using Parallel Linq!");
+            Func<int, int, int> op = (a, b) => a + b;
+
+            Measure(() => Aggregate.ComputeCpu1(data, op), expected, "CPU: Using Sequential Loop!");
+            Measure(() => Aggregate.ComputeCpu2(data, op), expected, "CPU: Using Parallel ForEach!");
+            Measure(() => Aggregate.ComputeCpu3(data, op), expected, "CPU: Using Linq!");
+            Measure(() => Aggregate.ComputeCpu4(data, op), expected, "CPU: Using Parallel Linq!");
 
             Console.WriteLine();
 
-            Measure(() => Aggregate.ComputeGpu1(data), expected, "GPU: Using Alea Parallel Linq!");
-            Measure(() => Aggregate.ComputeGpu2(data), expected, "GPU: Interleaved Addressing!");
+            Measure(() => Aggregate.ComputeGpu1(data, op), expected, "GPU: Using Alea Parallel Linq!");
+            Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing!");
 
             Console.WriteLine("Done!");
             Console.ReadLine();
