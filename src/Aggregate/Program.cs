@@ -8,14 +8,16 @@ namespace Aggregate
     {
         private static void Main()
         {
-            const int length = 260000000;
-            var data = Enumerable.Range(1, length).ToArray();
+            //const int length = 260000023;
+            const int length = 8000013;
+            var data = Enumerable.Range(1, length).Select(x => x % 10).ToArray();
 
             Measure(() => Aggregate.ComputeCpu1(data), "CPU: Using Sequential Loop!");
             Measure(() => Aggregate.ComputeCpu2(data), "CPU: Using Parallel ForEach!");
             Measure(() => Aggregate.ComputeCpu3(data), "CPU: Using Linq!");
-            Measure(() => Aggregate.ComputeCpu4(data), "CPU: Using Parallel Linq!");
+            //Measure(() => Aggregate.ComputeCpu4(data), "CPU: Using Parallel Linq!");
             Measure(() => Aggregate.ComputeGpu1(data), "GPU: Using Parallel Linq!");
+            Measure(() => Aggregate.ComputeGpu2(data), "GPU: XXX");
 
             Console.WriteLine("Expected: {0:D}", length * ((long)length + 1) / 2);
             // In case of overflow we display display. Alea does not have Aggregates has flexible as traditional Linq.
@@ -41,18 +43,15 @@ namespace Aggregate
             Console.WriteLine("{0} - {1} [Cold]", result1, formatElapsedTime(sw1));
             Console.ResetColor();
 
-            Console.WriteLine();
-
             var sw2 = Stopwatch.StartNew();
             var result2 = func();
             sw2.Stop();
-            Console.WriteLine(description);
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("{0} - {1} [Cold]", result2, formatElapsedTime(sw2));
             Console.ResetColor();
 
-            Console.WriteLine(new string('-', 43));
-            Console.WriteLine();
+            //Console.WriteLine(new string('-', 43));
+            //Console.WriteLine(new string('\n', 4));
         }
     }
 }
