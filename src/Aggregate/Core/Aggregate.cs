@@ -102,6 +102,7 @@ namespace Aggregate
                 }
             }, lp);
 
+            // ReSharper disable once TailRecursiveCall
             return bc > 1 ? ComputeGpu2(result) : result[0];
         }
 
