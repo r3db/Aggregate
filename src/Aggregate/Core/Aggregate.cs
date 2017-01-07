@@ -102,16 +102,19 @@ namespace Aggregate
                 }
             }, lp);
 
+            //return result.Sum();
+
             // ReSharper disable once TailRecursiveCall
             return bc > 1 ? ComputeGpu2(result) : result[0];
         }
 
         private static LaunchParam CreateLaunchParam(int gridDim, int blockDim, int sharedMemorySize)
         {
-            //Console.WriteLine("-------------");
-            //Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, gridDim);
-            //Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, blockDim);
-            //Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * blockDim);
+            Console.WriteLine("-------------");
+            Console.WriteLine("SM Count  : {0}", Gpu.Default.Device.Attributes.MultiprocessorCount);
+            Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, gridDim);
+            Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, blockDim);
+            Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * blockDim);
 
             return new LaunchParam(gridDim, blockDim, sharedMemorySize);
         }
