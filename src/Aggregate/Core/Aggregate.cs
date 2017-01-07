@@ -74,7 +74,7 @@ namespace Aggregate
         [GpuManaged]
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
-            var tb = 1024;
+            var tb = Gpu.Default.Device.Attributes.MaxThreadsPerBlock;
             var bc = (array.Length + (tb - 1)) / tb;
             var lp = CreateLaunchParam(bc, tb, tb * Marshal.SizeOf(typeof(T)));
             var result = new T[bc];

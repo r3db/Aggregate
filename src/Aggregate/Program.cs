@@ -20,7 +20,7 @@ namespace Aggregate
             Measure(() => Aggregate.ComputeCpu3(data, op), expected, "CPU: Using Parallel ForEach!");
             Measure(() => Aggregate.ComputeCpu4(data, op), expected, "CPU: Using Parallel Linq!");
 
-            Console.WriteLine();
+            Console.WriteLine(new string('\n', 5));
 
             Measure(() => Aggregate.ComputeGpu1(data, op), expected, "GPU: Using Alea Parallel Linq!");
             Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing!");
