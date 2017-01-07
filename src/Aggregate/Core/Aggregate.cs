@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -29,9 +28,17 @@ namespace Aggregate
             return result;
         }
 
+        // CPU: Using Linq!
+        // ReSharper disable once ParameterTypeCanBeEnumerable.Global
+        internal static T ComputeCpu2<T>(T[] array, Func<T, T, T> op)
+        {
+            return array.Aggregate(op);
+        }
+
         // Done!
         // CPU: Using Parallel ForEach!
-        internal static T ComputeCpu2<T>(IEnumerable<T> array, Func<T, T, T> op)
+        // ReSharper disable once ParameterTypeCanBeEnumerable.Global
+        internal static T ComputeCpu3<T>(T[] array, Func<T, T, T> op)
         {
             var result = default(T);
             var locker = new object();
@@ -48,15 +55,10 @@ namespace Aggregate
             return result;
         }
 
-        // CPU: Using Linq!
-        internal static T ComputeCpu3<T>(IEnumerable<T> array, Func<T, T, T> op)
-        {
-            return array.Aggregate(op);
-        }
-
         // Done!
         // CPU: Using Parallel Linq!
-        internal static T ComputeCpu4<T>(IEnumerable<T> array, Func<T, T, T> op)
+        // ReSharper disable once ParameterTypeCanBeEnumerable.Global
+        internal static T ComputeCpu4<T>(T[] array, Func<T, T, T> op)
         {
             return array.AsParallel().Aggregate(op);
         }

@@ -16,8 +16,8 @@ namespace Aggregate
             Func<int, int, int> op = (a, b) => a + b;
 
             Measure(() => Aggregate.ComputeCpu1(data, op), expected, "CPU: Using Sequential Loop!");
-            Measure(() => Aggregate.ComputeCpu2(data, op), expected, "CPU: Using Parallel ForEach!");
-            Measure(() => Aggregate.ComputeCpu3(data, op), expected, "CPU: Using Linq!");
+            Measure(() => Aggregate.ComputeCpu2(data, op), expected, "CPU: Using Linq!");
+            Measure(() => Aggregate.ComputeCpu3(data, op), expected, "CPU: Using Parallel ForEach!");
             Measure(() => Aggregate.ComputeCpu4(data, op), expected, "CPU: Using Parallel Linq!");
 
             Console.WriteLine();
