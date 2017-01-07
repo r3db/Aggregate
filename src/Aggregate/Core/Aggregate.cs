@@ -62,52 +62,57 @@ namespace Aggregate
             return Gpu.Default.Aggregate(array, (a, b) => a + b);
         }
 
-        // GPU: Interleaved Addressing
+        // GPU: Interleaved Addressing!
         internal static int ComputeGpu2(int[] array)
         {
-            return 0;
-            //var result = new long[0];
+            var tb = 32;
+            var bc = (array.Length + (tb - 1)) / tb;
+            var lp = new LaunchParam(bc, tb);
 
-            //Gpu.Default.Launch(() =>
-            //{
-            //    var shared = __shared__.ExternArray<int>();
-            //    var myId = threadIdx.x + blockDim.x * blockIdx.x;
-            //    var tid = threadIdx.x;
+            var result = new int[bc];
 
-            //    shared[tid] = array[myId];
-            //    DeviceFunction.SyncThreads();
+            Gpu.Default.Launch(() =>
+            {
+                var shared = __shared__.ExternArray<int>();
+                
+                var tid = threadIdx.x;
+                var bid = blockIdx.x;
+                var gid = blockDim.x * bid + tid;
 
-            //    for (int s = blockDim.x / 2; s > 0; s >>= 1)
-            //    {
-            //        if (tid < s)
-            //        {
-            //            shared[tid] += shared[tid + s];
-            //        }
+                if (tid >= array.Length)
+                {
+                    return;
+                }
 
-            //        DeviceFunction.SyncThreads();
-            //    }
+                shared[tid] = array[gid];
+                DeviceFunction.SyncThreads();
 
-            //    if (tid == 0)
-            //    {
-            //        result[blockIdx.x] = shared[0];
-            //    }
-            //}, lp);
+                for (var s = 1; s < blockDim.x; s *= 2)
+                {
+                    if (tid % (2 * s) == 0)
+                    {
+                        shared[tid] += shared[tid + s];
+                    }
 
-            //// Todo: This aggregate is not yet fully functional!
-            ////if (result.Length > 1)
-            ////{
-            ////    return ComputeGpu2(result);
-            ////}
+                    DeviceFunction.SyncThreads();
+                }
 
-            //return result.Sum();
+                if (tid == 0)
+                {
+                    result[bid] = shared[0];
+                }
+            }, lp);
+
+            // Todo: Remove!
+            return result.Sum();
         }
 
-        //internal static long ComputeGpu2(int[] array)
+        //internal static int ComputeGpu2(int[] array)
         //{
         //    var threads = 1024;
         //    var blocks = array.Length / threads;
 
-        //    var result = new long[threads];
+        //    var result = new int[threads];
         //    var lp = new LaunchParam(blocks, threads, threads * sizeof(int));
 
         //    Gpu.Default.Launch(() =>

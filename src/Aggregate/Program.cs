@@ -20,7 +20,7 @@ namespace Aggregate
             Console.WriteLine();
 
             Measure(() => Aggregate.ComputeGpu1(data), "GPU: Using Alea Parallel Linq!");
-            Measure(() => Aggregate.ComputeGpu2(data), "GPU: XXX");
+            Measure(() => Aggregate.ComputeGpu2(data), "GPU: Interleaved Addressing!");
 
             Console.WriteLine("Done!");
             Console.ReadLine();
