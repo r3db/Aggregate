@@ -9,8 +9,8 @@ namespace Aggregate
         private static void Main()
         {
             //const int length = 260000023;
-            const int length = 8000014;
-            var data = Enumerable.Range(1, length).Select(x => x % 10).ToArray();
+            const int length = 82000014;
+            var data = Enumerable.Range(1, length).Select(x => x % 3).ToArray();
             var expected = data.Sum();
 
             Measure(() => Aggregate.ComputeCpu1(data), expected, "CPU: Using Sequential Loop!");
