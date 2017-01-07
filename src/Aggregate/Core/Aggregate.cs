@@ -67,7 +67,7 @@ namespace Aggregate
         {
             var tb = 32;
             var bc = (array.Length + (tb - 1)) / tb;
-            var lp = new LaunchParam(bc, tb);
+            var lp = new LaunchParam(bc, tb, sizeof(int) * bc);
 
             var result = new int[bc];
 
