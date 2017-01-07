@@ -12,13 +12,14 @@ namespace Aggregate
     // http://http.developer.nvidia.com/NsightVisualStudio/3.0/Documentation/UserGuide/HTML/Content/CUDA_Warp_Watch.htm
     internal static class Aggregate
     {
+        // Done!
         // CPU: Using Sequential Loop!
-        internal static long ComputeCpu1(int[] array)
         {
-            var result = 0L;
+            var result = 0;
 
+            // ReSharper disable once ForCanBeConvertedToForeach
             // ReSharper disable once LoopCanBeConvertedToQuery
-            for (int i = 0; i < array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
             {
                 result += array[i];
             }
@@ -27,11 +28,11 @@ namespace Aggregate
         }
 
         // CPU: Using Parallel ForEach!
-        internal static long ComputeCpu2(int[] array)
+        internal static int ComputeCpu2(int[] array)
         {
-            var result = 0L;
+            var result = 0;
 
-            Parallel.ForEach(array, () => 0L, (value, state, local) => local + value, x =>
+            Parallel.ForEach(array, () => 0, (value, state, local) => local + value, x =>
             {
                 Interlocked.Add(ref result, x);
             });
