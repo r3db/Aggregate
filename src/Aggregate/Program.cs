@@ -15,13 +15,12 @@ namespace Aggregate
             Measure(() => Aggregate.ComputeCpu1(data), "CPU: Using Sequential Loop!");
             Measure(() => Aggregate.ComputeCpu2(data), "CPU: Using Parallel ForEach!");
             Measure(() => Aggregate.ComputeCpu3(data), "CPU: Using Linq!");
-            //Measure(() => Aggregate.ComputeCpu4(data), "CPU: Using Parallel Linq!");
-            Measure(() => Aggregate.ComputeGpu1(data), "GPU: Using Parallel Linq!");
-            Measure(() => Aggregate.ComputeGpu2(data), "GPU: XXX");
+            Measure(() => Aggregate.ComputeCpu4(data), "CPU: Using Parallel Linq!");
 
-            Console.WriteLine("Expected: {0:D}", length * ((long)length + 1) / 2);
-            // In case of overflow we display display. Alea does not have Aggregates has flexible as traditional Linq.
-            Console.WriteLine("Expected: {0:D}", unchecked((int)(length * ((long)length + 1) / 2)));
+            Console.WriteLine();
+
+            Measure(() => Aggregate.ComputeGpu1(data), "GPU: Using Alea Parallel Linq!");
+            Measure(() => Aggregate.ComputeGpu2(data), "GPU: XXX");
 
             Console.WriteLine("Done!");
             Console.ReadLine();
@@ -49,9 +48,6 @@ namespace Aggregate
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("{0} - {1} [Cold]", result2, formatElapsedTime(sw2));
             Console.ResetColor();
-
-            //Console.WriteLine(new string('-', 43));
-            //Console.WriteLine(new string('\n', 4));
         }
     }
 }
