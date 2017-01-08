@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 
 namespace Aggregate
@@ -9,7 +10,7 @@ namespace Aggregate
         private static void Main()
         {
             //const int length = 260000023;
-            const int length = 82000014;
+            const int length = 2000014;
             var data = Enumerable.Range(1, length).Select(x => x % 3).ToArray();
             var expected = data.Sum();
 
@@ -32,8 +33,8 @@ namespace Aggregate
         private static void Measure(Func<long> func, int expected, string description)
         {
             Func<Stopwatch, string> formatElapsedTime = (watch) => watch.Elapsed.TotalSeconds >= 1
-                ? $"{watch.Elapsed.TotalSeconds}s"
-                : $"{watch.ElapsedMilliseconds}ms";
+                ? string.Format(CultureInfo.InvariantCulture, "{0,7}s", watch.Elapsed.TotalSeconds)
+                : string.Format(CultureInfo.InvariantCulture, "{0,7}ms", watch.Elapsed.TotalMilliseconds);
 
             var sw1 = Stopwatch.StartNew();
             var result1 = func();
@@ -49,7 +50,7 @@ namespace Aggregate
             var result2 = func();
             sw2.Stop();
             Console.ForegroundColor = result2 != expected ? ConsoleColor.Red : ConsoleColor.Cyan;
-            Console.WriteLine("{0} - {1} [Cold]", result2, formatElapsedTime(sw2));
+            Console.WriteLine("{0} - {1} [Warm]", result2, formatElapsedTime(sw2));
             Console.ResetColor();
         }
     }
