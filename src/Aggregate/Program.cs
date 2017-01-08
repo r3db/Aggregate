@@ -24,12 +24,13 @@ namespace Aggregate
             Console.WriteLine(new string('\n', 5));
 
             Measure(() => Aggregate.ComputeGpu1(data, op), expected, "GPU: Using Alea Parallel Linq!");
-            
-            for (var i = 0; i < 10; ++i)
-            {
-                Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
-                Measure(() => Aggregate.ComputeGpu3(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
-            }
+            //Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
+            //Measure(() => Aggregate.ComputeGpu3(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
+            Measure(() => Aggregate.ComputeGpu4(data, op), expected, "GPU: Interleaved Addressing! (Method)");
+
+            //Measure(() => Aggregate.ComputeGpu5(data, op), expected, "GPU: Sequential Addressing! (Recursive)");
+            //Measure(() => Aggregate.ComputeGpu6(data, op), expected, "GPU: Sequential Addressing! (Loop)");
+            //Measure(() => Aggregate.ComputeGpu7(data, op), expected, "GPU: Sequential Addressing! (Method)");
 
             Console.WriteLine("Done!");
             Console.ReadLine();
@@ -37,9 +38,13 @@ namespace Aggregate
 
         private static void Measure(Func<long> func, int expected, string description)
         {
+            const string format = "{0,9}";
+
             Func<Stopwatch, string> formatElapsedTime = watch => watch.Elapsed.TotalSeconds >= 1
-                ? string.Format(CultureInfo.InvariantCulture, "{0,9}s",  watch.Elapsed.TotalSeconds)
-                : string.Format(CultureInfo.InvariantCulture, "{0,9}ms", watch.Elapsed.TotalMilliseconds);
+                ? string.Format(CultureInfo.InvariantCulture, format +"  (s)",  watch.Elapsed.TotalSeconds)
+                : watch.Elapsed.TotalMilliseconds >= 1
+                    ? string.Format(CultureInfo.InvariantCulture, format + " (ms)", watch.Elapsed.TotalMilliseconds)
+                    : string.Format(CultureInfo.InvariantCulture, format + " (μs)", watch.Elapsed.TotalMilliseconds * 1000000);
 
             var sw1 = Stopwatch.StartNew();
             var result1 = func();
