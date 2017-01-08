@@ -75,7 +75,7 @@ namespace Aggregate
         [GpuManaged]
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
-            var lp = CreateLaunchParam<T>(array);
+            var lp = CreateLaunchParam<T>(array.Length);
             var resultSize = lp.GridDim.x;
             var result = new T[resultSize];
 
@@ -175,20 +175,6 @@ namespace Aggregate
                 inputDevice = resultDevice;
                 Thread.Sleep(100);
             }
-        }
-
-        private static LaunchParam CreateLaunchParam<T>(T[] array)
-        {
-            var attributes = Gpu.Default.Device.Attributes;
-
-            var maxThreads = attributes.MaxThreadsPerBlock;
-            var threads = array.Length < maxThreads ? NextPowerOfTwo(array.Length) : maxThreads;
-            var blocks = (array.Length + threads - 1) / threads;
-            var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
-
-            //Console.WriteLine("Blocks : {0}, Threads: {1}, Shared-Memory: {2}", blocks, threads, sharedMemory);
-
-            return new LaunchParam(blocks, threads, sharedMemory);
         }
 
         private static LaunchParam CreateLaunchParam<T>(int length)
