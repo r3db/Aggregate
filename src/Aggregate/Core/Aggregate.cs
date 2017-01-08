@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Alea;
 using Alea.CSharp;
 using Alea.Parallel;
+using System.Threading;
 
 namespace Aggregate
 {
@@ -74,10 +75,9 @@ namespace Aggregate
         [GpuManaged]
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
-            var tb = Gpu.Default.Device.Attributes.MaxThreadsPerBlock;
-            var bc = (array.Length + (tb - 1)) / tb;
-            var lp = CreateLaunchParam(bc, tb, tb * Marshal.SizeOf(typeof(T)));
-            var result = new T[bc];
+            var lp = CreateLaunchParam<T>(array);
+            var resultSize = lp.GridDim.x;
+            var result = new T[resultSize];
 
             Gpu.Default.Launch(() =>
             {
@@ -111,19 +111,18 @@ namespace Aggregate
                 }
             }, lp);
 
-            //return array.Aggregate(op);
-
-            // ReSharper disable once TailRecursiveCall
-            return bc > 1 ? ComputeGpu2(result, op) : result[0];
+            Thread.Sleep(50);
+            return resultSize > 1 ? ComputeGpu2(result, op) : result[0];
         }
 
-        private static LaunchParam CreateLaunchParam(int gridDim, int blockDim, int sharedMemorySize)
+        private static LaunchParam CreateLaunchParam<T>(T[] array)
         {
-            //Console.WriteLine("-------------");
-            //Console.WriteLine("SM Count  : {0}", Gpu.Default.Device.Attributes.MultiprocessorCount);
-            //Console.WriteLine("MaxBlocks : {0}, Current Block Allocation : {1}", ushort.MaxValue, gridDim);
-            //Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, blockDim);
-            //Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * blockDim);
+            var attributes = Gpu.Default.Device.Attributes;
+
+            var maxThreads = attributes.MaxThreadsPerBlock;
+            var threads = array.Length < maxThreads ? NextPowerOfTwo(array.Length) : maxThreads;
+            var blocks = (array.Length + threads - 1) / threads;
+            var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
             return new LaunchParam(blocks, threads, sharedMemory);
         }
@@ -138,47 +137,5 @@ namespace Aggregate
             n |= n >> 16;
             return ++n;
         }
-
-        //internal static int ComputeGpu2(int[] array)
-        //{
-        //    var threads = 1024;
-        //    var blocks = array.Length / threads;
-
-        //    var result = new int[threads];
-        //    var lp = new LaunchParam(blocks, threads, threads * sizeof(int));
-
-        //    Gpu.Default.Launch(() =>
-        //    {
-        //        var shared = __shared__.ExternArray<int>();
-        //        var myId = threadIdx.x + blockDim.x * blockIdx.x;
-        //        var tid  = threadIdx.x;
-
-        //        shared[tid] = array[myId];
-        //        DeviceFunction.SyncThreads();
-
-        //        for (int s = blockDim.x / 2; s > 0; s >>= 1)
-        //        {
-        //            if (tid < s)
-        //            {
-        //                shared[tid] += shared[tid + s];
-        //            }
-
-        //            DeviceFunction.SyncThreads();
-        //        }
-
-        //        if (tid == 0)
-        //        {
-        //            result[blockIdx.x] = shared[0];
-        //        }
-        //    }, lp);
-
-        //    // Todo: This aggregate is not yet fully functional!
-        //    //if (result.Length > 1)
-        //    //{
-        //    //    return ComputeGpu2(result);
-        //    //}
-
-        //    return result.Sum();
-        //}
     }
 }
