@@ -11,7 +11,6 @@ namespace Aggregate
         {
             //const int length = 260000023;
             const int length = 82000014;
-            var data = Enumerable.Range(1, length).Select(x => x % 3).ToArray();
             var data = Enumerable.Range(1, length).Select(x => x % 5).ToArray();
             var expected = data.Sum();
 
