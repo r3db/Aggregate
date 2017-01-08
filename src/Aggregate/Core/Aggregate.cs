@@ -71,7 +71,7 @@ namespace Aggregate
             return Gpu.Default.Aggregate(array, op);
         }
 
-        // GPU: Interleaved Addressing!
+        // GPU: Interleaved Addressing! (Recursive)
         [GpuManaged]
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
@@ -111,8 +111,70 @@ namespace Aggregate
                 }
             }, lp);
 
-            Thread.Sleep(50);
+
+            Thread.Sleep(100);
             return resultSize > 1 ? ComputeGpu2(result, op) : result[0];
+        }
+
+        // GPU: Interleaved Addressing! (Loop)
+        [GpuManaged]
+        internal static T ComputeGpu3<T>(T[] array, Func<T, T, T> op)
+        {
+            var inputDevice  = Gpu.Default.Allocate<T>(array);
+
+            while (true)
+            {
+                var lp = CreateLaunchParam<T>(Gpu.ArrayGetLength(inputDevice));
+                var resultDevice = Gpu.Default.Allocate<T>(lp.GridDim.x);
+
+                //Console.WriteLine(Gpu.ArrayGetLength(inputDevice));
+                //Console.WriteLine(Gpu.ArrayGetLength(resultDevice));
+
+                Gpu.Default.Launch(() => {
+                    var shared = __shared__.ExternArray<T>();
+
+                    var tid = threadIdx.x;
+                    var bid = blockIdx.x;
+                    var gid = blockDim.x * bid + tid;
+
+                    if (tid >= inputDevice.Length)
+                    {
+                        return;
+                    }
+
+                    shared[tid] = inputDevice[gid];
+                    DeviceFunction.SyncThreads();
+
+                    for (var s = 1; s < blockDim.x; s *= 2)
+                    {
+                        if (tid % (2 * s) == 0)
+                        {
+                            shared[tid] = op(shared[tid], shared[tid + s]);
+                        }
+
+                        DeviceFunction.SyncThreads();
+                    }
+
+                    if (tid == 0)
+                    {
+                        resultDevice[bid] = shared[0];
+                    }
+                }, lp);
+
+                if (Gpu.ArrayGetLength(resultDevice) == 1)
+                {
+                    var result = Gpu.CopyToHost<T>(resultDevice);
+
+                    Gpu.Free(inputDevice);
+                    Gpu.Free(resultDevice);
+
+                    return result[0];
+                }
+
+                Gpu.Free(inputDevice);
+                inputDevice = resultDevice;
+                Thread.Sleep(100);
+            }
         }
 
         private static LaunchParam CreateLaunchParam<T>(T[] array)
@@ -122,6 +184,20 @@ namespace Aggregate
             var maxThreads = attributes.MaxThreadsPerBlock;
             var threads = array.Length < maxThreads ? NextPowerOfTwo(array.Length) : maxThreads;
             var blocks = (array.Length + threads - 1) / threads;
+            var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
+
+            //Console.WriteLine("Blocks : {0}, Threads: {1}, Shared-Memory: {2}", blocks, threads, sharedMemory);
+
+            return new LaunchParam(blocks, threads, sharedMemory);
+        }
+
+        private static LaunchParam CreateLaunchParam<T>(int length)
+        {
+            var attributes = Gpu.Default.Device.Attributes;
+
+            var maxThreads = 256;//attributes.MaxThreadsPerBlock;
+            var threads = length < maxThreads ? NextPowerOfTwo(length) : maxThreads;
+            var blocks = (length + threads - 1) / threads;
             var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
             return new LaunchParam(blocks, threads, sharedMemory);

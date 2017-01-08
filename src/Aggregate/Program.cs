@@ -24,7 +24,12 @@ namespace Aggregate
             Console.WriteLine(new string('\n', 5));
 
             Measure(() => Aggregate.ComputeGpu1(data, op), expected, "GPU: Using Alea Parallel Linq!");
-            Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing!");
+            
+            for (var i = 0; i < 10; ++i)
+            {
+                Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
+                Measure(() => Aggregate.ComputeGpu3(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
+            }
 
             Console.WriteLine("Done!");
             Console.ReadLine();
