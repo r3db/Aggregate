@@ -10,7 +10,7 @@ namespace Aggregate
         private static void Main()
         {
             //const int length = 260000023;
-            const int length = 2000014;
+            const int length = 82000014;
             var data = Enumerable.Range(1, length).Select(x => x % 3).ToArray();
             var expected = data.Sum();
 
@@ -32,8 +32,8 @@ namespace Aggregate
 
         private static void Measure(Func<long> func, int expected, string description)
         {
-            Func<Stopwatch, string> formatElapsedTime = (watch) => watch.Elapsed.TotalSeconds >= 1
-                ? string.Format(CultureInfo.InvariantCulture, "{0,7}s", watch.Elapsed.TotalSeconds)
+            Func<Stopwatch, string> formatElapsedTime = watch => watch.Elapsed.TotalSeconds >= 1
+                ? string.Format(CultureInfo.InvariantCulture, "{0,7}s",  watch.Elapsed.TotalSeconds)
                 : string.Format(CultureInfo.InvariantCulture, "{0,7}ms", watch.Elapsed.TotalMilliseconds);
 
             var sw1 = Stopwatch.StartNew();
