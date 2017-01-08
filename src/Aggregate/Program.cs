@@ -33,8 +33,8 @@ namespace Aggregate
         private static void Measure(Func<long> func, int expected, string description)
         {
             Func<Stopwatch, string> formatElapsedTime = watch => watch.Elapsed.TotalSeconds >= 1
-                ? string.Format(CultureInfo.InvariantCulture, "{0,7}s",  watch.Elapsed.TotalSeconds)
-                : string.Format(CultureInfo.InvariantCulture, "{0,7}ms", watch.Elapsed.TotalMilliseconds);
+                ? string.Format(CultureInfo.InvariantCulture, "{0,9}s",  watch.Elapsed.TotalSeconds)
+                : string.Format(CultureInfo.InvariantCulture, "{0,9}ms", watch.Elapsed.TotalMilliseconds);
 
             var sw1 = Stopwatch.StartNew();
             var result1 = func();
