@@ -125,7 +125,18 @@ namespace Aggregate
             //Console.WriteLine("MaxThreads: {0}, Current Thread Allocation: {1}", Gpu.Default.Device.Attributes.MaxThreadsPerBlock, blockDim);
             //Console.WriteLine("MaxShared : {0}, Current Shared Allocation: {1}", Gpu.Default.Device.Attributes.MaxSharedMemoryPerBlock, sizeof(int) * blockDim);
 
-            return new LaunchParam(gridDim, blockDim, sharedMemorySize);
+            return new LaunchParam(blocks, threads, sharedMemory);
+        }
+
+        private static int NextPowerOfTwo(int n)
+        {
+            --n;
+            n |= n >> 1;
+            n |= n >> 2;
+            n |= n >> 4;
+            n |= n >> 8;
+            n |= n >> 16;
+            return ++n;
         }
 
         //internal static int ComputeGpu2(int[] array)
