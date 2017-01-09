@@ -34,6 +34,9 @@ namespace Aggregate
             Measure(() => AggregateGpuSAFB.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy! (Recursive)");
             Measure(() => AggregateGpuSAFB.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing Fully Busy! (Loop)");
 
+            Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy Unroll! (Recursive)");
+            Measure(() => AggregateGpuSAFBU.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing Fully Busy Unroll! (Loop)");
+
             Console.WriteLine("Done!");
             Console.ReadLine();
         }
