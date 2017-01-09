@@ -51,7 +51,7 @@ namespace Aggregate
                 }
 
                 Console.ForegroundColor = isGpu
-                    ? ConsoleColor.Red
+                    ? ConsoleColor.White
                     : ConsoleColor.Cyan;
             };
 

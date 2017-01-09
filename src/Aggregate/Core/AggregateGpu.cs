@@ -8,6 +8,8 @@ namespace Aggregate
 {
     internal static class AggregateGpu
     {
+        private const int WarpSize = 32;
+
         // GPU: Using Alea Parallel Linq!
         internal static T ComputeGpu0<T>(T[] array, Func<T, T, T> op)
         {
@@ -179,7 +181,7 @@ namespace Aggregate
             const int maxThreads = 128;
             var threads = length < maxThreads ? np2(length) : maxThreads;
             var blocks = (length + threads - 1) / threads;
-            var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
+            var sharedMemory = threads <= WarpSize ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
             //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
 
@@ -202,7 +204,7 @@ namespace Aggregate
             const int maxThreads = 128;
             var threads = length < 2 * maxThreads ? np2((length + 1) / 2) : maxThreads;
             var blocks = (length + (2 * threads) - 1) / (2 * threads);
-            var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
+            var sharedMemory = threads <= WarpSize ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
             //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
 
@@ -316,7 +318,7 @@ namespace Aggregate
 
             DeviceFunction.SyncThreads();
 
-            for (var s = bdm / 2; s > 32; s >>= 1)
+            for (var s = bdm / 2; s > WarpSize; s >>= 1)
             {
                 if (tid < s && gid + s < length)
                 {
@@ -326,14 +328,14 @@ namespace Aggregate
                 DeviceFunction.SyncThreads();
             }
 
-            if (tid < 32)
+            if (tid < WarpSize)
             {
                 if (bdm >= 64)
                 {
-                    shared[tid] = op(shared[tid], shared[tid + 32]);
+                    shared[tid] = op(shared[tid], shared[tid + WarpSize]);
                 }
 
-                for (var offset = 32 / 2; offset > 0; offset /= 2)
+                for (var offset = WarpSize / 2; offset > 0; offset /= 2)
                 {
                     shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], offset));
                 }
