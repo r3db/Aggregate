@@ -68,7 +68,7 @@ namespace Aggregate
             var blocks = (length + threads - 1) / threads;
             var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
-            Console.WriteLine("Blocks : {0,5}, Threads: {1,5}, Shared-Memory: {2,5}, Length: {3,8}", blocks, threads, sharedMemory, length);
+            //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
 
             return new LaunchParam(blocks, threads, sharedMemory);
         }
