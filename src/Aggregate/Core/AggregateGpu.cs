@@ -322,7 +322,7 @@ namespace Aggregate
 
             if (tid < WarpSize)
             {
-                if (bdm >= 64)
+                if (bdm >= 2 * WarpSize)
                 {
                     shared[tid] = op(shared[tid], shared[tid + WarpSize]);
                 }
