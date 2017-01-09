@@ -58,9 +58,7 @@ namespace Aggregate
                 return ++n;
             };
 
-            var attributes = Gpu.Default.Device.Attributes;
-
-            var maxThreads = 128;
+            const int maxThreads = 128;
             var threads = length < 2 * maxThreads ? np2((length + 1) / 2) : maxThreads;
             var blocks = (length + (2 * threads) - 1) / (2 * threads);
             var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
@@ -70,7 +68,8 @@ namespace Aggregate
             return new LaunchParam(blocks, threads, sharedMemory);
         }
 
-        private static void Kernel<T>(deviceptr<T> array, int length, T[] resultDevice, Func<T, T, T> op)
+        // ReSharper disable once SuggestBaseTypeForParameter
+        private static void Kernel<T>(deviceptr<T> array, int length, T[] result, Func<T, T, T> op)
         {
             var shared = __shared__.ExternArray<T>();
 
@@ -108,7 +107,7 @@ namespace Aggregate
 
             if (tid == 0)
             {
-                resultDevice[bid] = shared[0];
+                result[bid] = shared[0];
             }
         }
     }

@@ -20,58 +20,53 @@ namespace Aggregate
 
             Func<int, int, int> op = (a, b) => a + b;
 
-            Measure(() => AggregateCpu.Compute1(data, op), expected, "CPU: Using Sequential Loop!");
-            Measure(() => AggregateCpu.Compute2(data, op), expected, "CPU: Using Linq!");
-            Measure(() => AggregateCpu.Compute3(data, op), expected, "CPU: Using Parallel ForEach!");
-            Measure(() => AggregateCpu.Compute4(data, op), expected, "CPU: Using Parallel Linq!");
+            Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Using Sequential Loop!");
+            Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Using Linq!");
+            Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
+            Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
 
-            Measure(() => Gpu.Default.Aggregate(data, op), expected, "GPU: Using Alea Parallel Linq!");
-
-            Measure(() => AggregateGpuIA.ComputeGpu1(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
-            Measure(() => AggregateGpuIA.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
-
-            Measure(() => AggregateGpuSA.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing! (Recursive)");
-            Measure(() => AggregateGpuSA.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing! (Loop)");
-
-            Measure(() => AggregateGpuSAFB.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy! (Recursive)");
-            Measure(() => AggregateGpuSAFB.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing Fully Busy! (Loop)");
-
-            Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy Unroll! (Loop)");
-
-            //Measure(() => AggregateGpuSAFBU.ComputeGpu3(data, op), expected, "XXX");
-
-
-
+            Measure(() => Gpu.Default.Aggregate(data, op), expected, true, length, "GPU: Using Alea Parallel Linq!");
+            Measure(() => AggregateGpuIA.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing! (Loop)");
+            Measure(() => AggregateGpuSA.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing!");
+            Measure(() => AggregateGpuSAFB.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing Fully Busy!");
+            Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing Fully Busy Unroll!");
+            
             Console.WriteLine("Done!");
             Console.ReadLine();
         }
 
-        private static void Measure(Func<int> func, int expected, string description)
+        private static void Measure(Func<int> func, int expected, bool isGpu, int length, string description)
         {
             const string format = "{0,9}";
 
-            Func<Stopwatch, string> formatElapsedTime = watch => watch.Elapsed.TotalSeconds >= 1
-                ? string.Format(CultureInfo.InvariantCulture, format +"  (s)",  watch.Elapsed.TotalSeconds)
-                : watch.Elapsed.TotalMilliseconds >= 1
-                    ? string.Format(CultureInfo.InvariantCulture, format + " (ms)", watch.Elapsed.TotalMilliseconds)
-                    : string.Format(CultureInfo.InvariantCulture, format + " (μs)", watch.Elapsed.TotalMilliseconds * 1000000);
+            Func<Stopwatch, string> formatElapsedTime = w => w.Elapsed.TotalSeconds >= 1
+                ? string.Format(CultureInfo.InvariantCulture, format +"  (s)",  w.Elapsed.TotalSeconds)
+                : w.Elapsed.TotalMilliseconds >= 1
+                    ? string.Format(CultureInfo.InvariantCulture, format + " (ms)", w.Elapsed.TotalMilliseconds)
+                    : string.Format(CultureInfo.InvariantCulture, format + " (μs)", w.Elapsed.TotalMilliseconds * 1000);
 
-            Func<Stopwatch, string> bandwidth = watch => string.Format(CultureInfo.InvariantCulture, "{0,7:F4} GB/s", (82000015 * 4) / (watch.Elapsed.TotalMilliseconds * 1000000));
+            Func<bool, ConsoleColor> color = error => error
+                ? ConsoleColor.Red 
+                : isGpu 
+                    ? ConsoleColor.Green 
+                    : ConsoleColor.Cyan;
 
+            Func<Stopwatch, string> bandwidth = w => string.Format(CultureInfo.InvariantCulture, "{0,7:F4} GB/s", (length * sizeof(int)) / (w.Elapsed.TotalMilliseconds * 1000000));
+            
             var sw1 = Stopwatch.StartNew();
             var result1 = func();
             sw1.Stop();
 
             Console.WriteLine(new string('-', 43));
             Console.WriteLine(description);
-            Console.ForegroundColor = result1 != expected ? ConsoleColor.Red : ConsoleColor.Cyan;
+            Console.ForegroundColor = color(result1 != expected);
             Console.WriteLine("{0} - {1} - {2} [Cold]", result1, formatElapsedTime(sw1), bandwidth(sw1));
             Console.ResetColor();
 
             var sw2 = Stopwatch.StartNew();
             var result2 = func();
             sw2.Stop();
-            Console.ForegroundColor = result2 != expected ? ConsoleColor.Red : ConsoleColor.Cyan;
+            Console.ForegroundColor = color(result2 != expected);
             Console.WriteLine("{0} - {1} - {2} [Warm]", result2, formatElapsedTime(sw2), bandwidth(sw2));
             Console.ResetColor();
         }

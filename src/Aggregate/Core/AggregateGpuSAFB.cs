@@ -7,48 +7,45 @@ namespace Aggregate
 {
     internal static class AggregateGpuSAFB
     {
-        // GPU: Sequential Addressing Fully Busy! (Recursive)
-        [GpuManaged]
+        // GPU: Sequential Addressing Fully Busy! (Loop)
         internal static T ComputeGpu1<T>(T[] array, Func<T, T, T> op)
         {
-            var lp = CreateLaunchParam<T>(array.Length);
-            var resultSize = lp.GridDim.x;
-            var result = new T[resultSize];
+            var gpu = Gpu.Default;
 
-            Gpu.Default.Launch(() => Kernel(array, result, op), lp);
-
-            return resultSize > 1 ? ComputeGpu1(result, op) : result[0];
-        }
-
-        // GPU: Sequential Addressing Fully Busy! (Loop)
-        internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
-        {
-            var inputDevice = Gpu.Default.Allocate<T>(array);
+            var arrayLength = array.Length;
+            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
+            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
 
             while (true)
             {
-                var lp = CreateLaunchParam<T>(Gpu.ArrayGetLength(inputDevice));
-                var resultDevice = Gpu.Default.Allocate<T>(lp.GridDim.x);
+                var launchParams = CreateLaunchParams<T>(arrayLength);
+                var resultLength = launchParams.GridDim.x;
+                var resultDevice = gpu.Allocate<T>(resultLength);
 
-                Gpu.Default.Launch(() => Kernel(inputDevice, resultDevice, op), lp);
+                // ReSharper disable once AccessToModifiedClosure
+                // ReSharper disable once AccessToModifiedClosure
+                gpu.Launch(() => Kernel(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
 
-                if (Gpu.ArrayGetLength(resultDevice) == 1)
+                if (resultLength == 1)
                 {
-                    var result = Gpu.CopyToHost<T>(resultDevice);
-
-                    Gpu.Free(inputDevice);
+                    arrayMemory.Dispose();
+                    var result = Gpu.CopyToHost(resultDevice);
                     Gpu.Free(resultDevice);
-
                     return result[0];
                 }
 
-                Gpu.Free(inputDevice);
-                inputDevice = resultDevice;
+                // I should be able to dispose at this point!
+                // This is a symptom I did something stupid!
+                //arrayMemory.Dispose();
+
+                arrayLength = resultLength;
+                arrayMemory = gpu.ArrayGetMemory(resultDevice, true, false);
+                arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
             }
         }
 
         // Helpers
-        private static LaunchParam CreateLaunchParam<T>(int length)
+        private static LaunchParam CreateLaunchParams<T>(int length)
         {
             Func<int, int> np2 = n => {
                 --n;
@@ -63,7 +60,7 @@ namespace Aggregate
 
             var attributes = Gpu.Default.Device.Attributes;
 
-            var maxThreads = attributes.MaxThreadsPerBlock;
+            var maxThreads = 128;
             var threads = length < 2 * maxThreads ? np2((length + 1) / 2) : maxThreads;
             var blocks = (length + (2 * threads) - 1) / (2 * threads);
             var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
@@ -73,7 +70,7 @@ namespace Aggregate
             return new LaunchParam(blocks, threads, sharedMemory);
         }
 
-        private static void Kernel<T>(T[] array, T[] resultDevice, Func<T, T, T> op)
+        private static void Kernel<T>(deviceptr<T> array, int length, T[] result, Func<T, T, T> op)
         {
             var shared = __shared__.ExternArray<T>();
 
@@ -81,15 +78,13 @@ namespace Aggregate
             var bid = blockIdx.x;
             var gid = 2 * blockDim.x * bid + tid;
 
-            shared[tid] = (gid < array.Length && gid + blockDim.x < array.Length)
-                ? op(array[gid], array[gid + blockDim.x])
-                : array[gid];
+            shared[tid] = (gid < length && gid + blockDim.x < length) ? op(array[gid], array[gid + blockDim.x]) : array[gid];
 
             DeviceFunction.SyncThreads();
 
             for (int s = blockDim.x / 2; s > 0; s >>= 1)
             {
-                if (tid < s && gid + s < array.Length)
+                if (tid < s && gid + s < length)
                 {
                     shared[tid] = op(shared[tid], shared[tid + s]);
                 }
@@ -99,7 +94,7 @@ namespace Aggregate
 
             if (tid == 0)
             {
-                resultDevice[bid] = shared[0];
+                result[bid] = shared[0];
             }
         }
     }
