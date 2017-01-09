@@ -17,7 +17,7 @@ namespace Aggregate
 
             Gpu.Default.Launch(() => Kernel(array, result, op), lp);
 
-            return resultSize > 1 ? ComputeGpu2(result, op) : result[0];
+            return resultSize > 1 ? ComputeGpu1(result, op) : result[0];
         }
 
         // GPU: Sequential Addressing Fully Busy! (Loop)

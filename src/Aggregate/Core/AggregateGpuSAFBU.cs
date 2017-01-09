@@ -1,13 +1,14 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using Alea;
 using Alea.CSharp;
+using System.Diagnostics;
 
 namespace Aggregate
 {
-    internal static class AggregateGpuSA
+    internal static class AggregateGpuSAFBU
     {
-        // GPU: Sequential Addressing! (Recursive)
+        // GPU: Sequential Addressing Fully Busy! (Recursive)
         [GpuManaged]
         internal static T ComputeGpu1<T>(T[] array, Func<T, T, T> op)
         {
@@ -20,7 +21,7 @@ namespace Aggregate
             return resultSize > 1 ? ComputeGpu1(result, op) : result[0];
         }
 
-        // GPU: Sequential Addressing! (Loop)
+        // GPU: Sequential Addressing Fully Busy! (Loop)
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
             var inputDevice = Gpu.Default.Allocate<T>(array);
@@ -64,8 +65,8 @@ namespace Aggregate
             var attributes = Gpu.Default.Device.Attributes;
 
             var maxThreads = attributes.MaxThreadsPerBlock;
-            var threads = length < maxThreads ? np2(length) : maxThreads;
-            var blocks = (length + threads - 1) / threads;
+            var threads = length < 2 * maxThreads ? np2((length + 1) / 2) : maxThreads;
+            var blocks = (length + (2 * threads) - 1) / (2 * threads);
             var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
             //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
@@ -79,16 +80,15 @@ namespace Aggregate
 
             var tid = threadIdx.x;
             var bid = blockIdx.x;
-            var gid = blockDim.x * bid + tid;
+            var gid = 2 * blockDim.x * bid + tid;
 
-            if (gid < array.Length)
-            {
-                shared[tid] = array[gid];
-            }
+            shared[tid] = (gid < array.Length && gid + blockDim.x < array.Length)
+                ? op(array[gid], array[gid + blockDim.x])
+                : array[gid];
 
             DeviceFunction.SyncThreads();
 
-            for (int s = blockDim.x / 2; s > 0; s >>= 1)
+            for (int s = blockDim.x / 2; s > 32; s >>= 1)
             {
                 if (tid < s && gid + s < array.Length)
                 {
@@ -96,6 +96,21 @@ namespace Aggregate
                 }
 
                 DeviceFunction.SyncThreads();
+            }
+
+            if (tid < 32)
+            {
+                // Fetch final intermediate sum from 2nd warp
+                if (blockDim.x >= 64)
+                {
+                    shared[tid] = op(shared[tid], shared[tid + 32]);
+                }
+
+                // Reduce final warp using shuffle
+                for (int offset = 32 / 2; offset > 0; offset /= 2)
+                {
+                    shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown<T>(shared[tid], offset));
+                }
             }
 
             if (tid == 0)
