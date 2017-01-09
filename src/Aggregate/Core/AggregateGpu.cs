@@ -327,10 +327,11 @@ namespace Aggregate
                     shared[tid] = op(shared[tid], shared[tid + WarpSize]);
                 }
 
-                for (var offset = WarpSize / 2; offset > 0; offset /= 2)
-                {
-                    shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], offset));
-                }
+                shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], 16));
+                shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], 8));
+                shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], 4));
+                shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], 2));
+                shared[tid] = op(shared[tid], DeviceFunction.ShuffleDown(shared[tid], 1));
             }
 
             if (tid == 0)
