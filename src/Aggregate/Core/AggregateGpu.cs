@@ -9,6 +9,7 @@ namespace Aggregate
     internal static class AggregateGpu
     {
         private const int WarpSize = 32;
+        private const int MaxThreads = 128;
 
         // GPU: Using Alea Parallel Linq!
         internal static T ComputeGpu0<T>(T[] array, Func<T, T, T> op)
@@ -167,48 +168,39 @@ namespace Aggregate
         // Helpers
         private static LaunchParam CreateLaunchParamsNonStridedAccess<T>(int length)
         {
-            Func<int, int> np2 = n => {
-                --n;
-                n |= n >> 1;
-                n |= n >> 2;
-                n |= n >> 4;
-                n |= n >> 8;
-                n |= n >> 16;
-
-                return ++n;
-            };
-
-            const int maxThreads = 128;
-            var threads = length < maxThreads ? np2(length) : maxThreads;
+            var threads = length < MaxThreads ? NextPowerOfTwo(length) : MaxThreads;
             var blocks = (length + threads - 1) / threads;
             var sharedMemory = threads <= WarpSize ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
-            //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
-
+            PrintLaunchParamInformation(length, blocks, threads, sharedMemory);
             return new LaunchParam(blocks, threads, sharedMemory);
         }
 
         private static LaunchParam CreateLaunchParamsStridedAccess<T>(int length)
         {
-            Func<int, int> np2 = n => {
-                --n;
-                n |= n >> 1;
-                n |= n >> 2;
-                n |= n >> 4;
-                n |= n >> 8;
-                n |= n >> 16;
-
-                return ++n;
-            };
-
             const int maxThreads = 128;
-            var threads = length < 2 * maxThreads ? np2((length + 1) / 2) : maxThreads;
+            var threads = length < 2 * maxThreads ? NextPowerOfTwo((length + 1) / 2) : maxThreads;
             var blocks = (length + (2 * threads) - 1) / (2 * threads);
             var sharedMemory = threads <= WarpSize ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
-            //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
-
+            PrintLaunchParamInformation(length, blocks, threads, sharedMemory);
             return new LaunchParam(blocks, threads, sharedMemory);
+        }
+        
+        private static int NextPowerOfTwo(int value) {
+            --value;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+
+            return ++value;
+        }
+
+        private static void PrintLaunchParamInformation(int length, int blocks, int threads, int sharedMemory)
+        {
+            //Console.WriteLine("Blocks : {0,7}, Threads: {1,7}, Shared-Memory: {2,7}, Length: {3,8}", blocks, threads, sharedMemory, length);
         }
 
         // ReSharper disable once SuggestBaseTypeForParameter
