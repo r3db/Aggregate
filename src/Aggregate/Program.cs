@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Alea;
+using Alea.Parallel;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -16,21 +18,18 @@ namespace Aggregate
 
             Func<int, int, int> op = (a, b) => a + b;
 
-            Measure(() => Aggregate.ComputeCpu1(data, op), expected, "CPU: Using Sequential Loop!");
-            Measure(() => Aggregate.ComputeCpu2(data, op), expected, "CPU: Using Linq!");
-            Measure(() => Aggregate.ComputeCpu3(data, op), expected, "CPU: Using Parallel ForEach!");
-            Measure(() => Aggregate.ComputeCpu4(data, op), expected, "CPU: Using Parallel Linq!");
+            Measure(() => AggregateCpu.Compute1(data, op), expected, "CPU: Using Sequential Loop!");
+            Measure(() => AggregateCpu.Compute2(data, op), expected, "CPU: Using Linq!");
+            Measure(() => AggregateCpu.Compute3(data, op), expected, "CPU: Using Parallel ForEach!");
+            Measure(() => AggregateCpu.Compute4(data, op), expected, "CPU: Using Parallel Linq!");
 
-            Console.WriteLine(new string('\n', 5));
+            Measure(() => Gpu.Default.Aggregate(data, op), expected, "GPU: Using Alea Parallel Linq!");
 
-            Measure(() => Aggregate.ComputeGpu1(data, op), expected, "GPU: Using Alea Parallel Linq!");
-            Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
-            Measure(() => Aggregate.ComputeGpu3(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
-            Measure(() => Aggregate.ComputeGpu4(data, op), expected, "GPU: Interleaved Addressing! (Method)");
+            Measure(() => AggregateGpuIA.ComputeGpu1(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
+            Measure(() => AggregateGpuIA.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
 
-            Measure(() => Aggregate.ComputeGpu5(data, op), expected, "GPU: Sequential Addressing! (Recursive)");
-            Measure(() => Aggregate.ComputeGpu6(data, op), expected, "GPU: Sequential Addressing! (Loop)");
-            Measure(() => Aggregate.ComputeGpu7(data, op), expected, "GPU: Sequential Addressing! (Method)");
+            Measure(() => AggregateGpuSA.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing! (Recursive)");
+            Measure(() => AggregateGpuSA.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing! (Loop)");
 
             Console.WriteLine("Done!");
             Console.ReadLine();
