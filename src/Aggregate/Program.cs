@@ -45,7 +45,7 @@ namespace Aggregate
                     ? string.Format(CultureInfo.InvariantCulture, format + " (ms)", watch.Elapsed.TotalMilliseconds)
                     : string.Format(CultureInfo.InvariantCulture, format + " (μs)", watch.Elapsed.TotalMilliseconds * 1000000);
 
-            Func<Stopwatch, string> bandwidth = watch => string.Format(CultureInfo.InvariantCulture, "{0:F4} GB/s", (82000015 * 4) / (watch.Elapsed.TotalMilliseconds * 1000000));
+            Func<Stopwatch, string> bandwidth = watch => string.Format(CultureInfo.InvariantCulture, "{0,7:F4} GB/s", (82000015 * 4) / (watch.Elapsed.TotalMilliseconds * 1000000));
 
             var sw1 = Stopwatch.StartNew();
             var result1 = func();
@@ -54,14 +54,14 @@ namespace Aggregate
             Console.WriteLine(new string('-', 43));
             Console.WriteLine(description);
             Console.ForegroundColor = result1 != expected ? ConsoleColor.Red : ConsoleColor.Cyan;
-            Console.WriteLine("{0} - {1} : {2} [Cold]", result1, formatElapsedTime(sw1), bandwidth(sw1));
+            Console.WriteLine("{0} - {1} - {2} [Cold]", result1, formatElapsedTime(sw1), bandwidth(sw1));
             Console.ResetColor();
 
             var sw2 = Stopwatch.StartNew();
             var result2 = func();
             sw2.Stop();
             Console.ForegroundColor = result2 != expected ? ConsoleColor.Red : ConsoleColor.Cyan;
-            Console.WriteLine("{0} - {1} : {2} [Warm]", result2, formatElapsedTime(sw2), bandwidth(sw2));
+            Console.WriteLine("{0} - {1} - {2} [Warm]", result2, formatElapsedTime(sw2), bandwidth(sw2));
             Console.ResetColor();
         }
     }
