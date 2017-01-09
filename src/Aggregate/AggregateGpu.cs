@@ -20,116 +20,30 @@ namespace Aggregate
         // GPU: Interleaved Addressing!
         internal static T ComputeGpu1<T>(T[] array, Func<T, T, T> op)
         {
-            var gpu = Gpu.Default;
-
-            var arrayLength = array.Length;
-            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
-            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-
-            while (true)
-            {
-                var launchParams = CreateLaunchParamsNonStridedAccess<T>(arrayLength);
-                var resultLength = launchParams.GridDim.x;
-                var resultDevice = gpu.Allocate<T>(resultLength);
-
-                // ReSharper disable once AccessToModifiedClosure
-                // ReSharper disable once AccessToModifiedClosure
-                gpu.Launch(() => KernelInterleavedAccess(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
-
-                if (resultLength == 1)
-                {
-                    arrayMemory.Dispose();
-                    var result = Gpu.CopyToHost(resultDevice);
-                    Gpu.Free(resultDevice);
-                    return result[0];
-                }
-
-                // I should be able to dispose at this point!
-                // This is a symptom I did something stupid!
-                //arrayMemory.Dispose();
-
-                arrayLength = resultLength;
-                arrayMemory = gpu.ArrayGetMemory(resultDevice, true, false);
-                arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-            }
+            return ReduceHelper(array, op, KernelInterleavedAccess, CreateLaunchParamsNonStridedAccess<T>);
         }
 
         // GPU: Sequential Addressing!
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
-            var gpu = Gpu.Default;
-
-            var arrayLength = array.Length;
-            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
-            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-
-            while (true)
-            {
-                var launchParams = CreateLaunchParamsNonStridedAccess<T>(arrayLength);
-                var resultLength = launchParams.GridDim.x;
-                var resultDevice = gpu.Allocate<T>(resultLength);
-
-                // ReSharper disable once AccessToModifiedClosure
-                // ReSharper disable once AccessToModifiedClosure
-                gpu.Launch(() => KernelSequentialAccess(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
-
-                if (resultLength == 1)
-                {
-                    arrayMemory.Dispose();
-                    var result = Gpu.CopyToHost(resultDevice);
-                    Gpu.Free(resultDevice);
-                    return result[0];
-                }
-
-                // I should be able to dispose at this point!
-                // This is a symptom I did something stupid!
-                //arrayMemory.Dispose();
-
-                arrayLength = resultLength;
-                arrayMemory = gpu.ArrayGetMemory(resultDevice, true, false);
-                arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-            }
+            return ReduceHelper(array, op, KernelSequentialAccess, CreateLaunchParamsNonStridedAccess<T>);
         }
 
         // GPU: Sequential Reduce Idle Threads!
         internal static T ComputeGpu3<T>(T[] array, Func<T, T, T> op)
         {
-            var gpu = Gpu.Default;
-
-            var arrayLength = array.Length;
-            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
-            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-
-            while (true)
-            {
-                var launchParams = CreateLaunchParamsStridedAccess<T>(arrayLength);
-                var resultLength = launchParams.GridDim.x;
-                var resultDevice = gpu.Allocate<T>(resultLength);
-
-                // ReSharper disable once AccessToModifiedClosure
-                // ReSharper disable once AccessToModifiedClosure
-                gpu.Launch(() => KernelSequentialReduceIdleThreads(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
-
-                if (resultLength == 1)
-                {
-                    arrayMemory.Dispose();
-                    var result = Gpu.CopyToHost(resultDevice);
-                    Gpu.Free(resultDevice);
-                    return result[0];
-                }
-
-                // I should be able to dispose at this point!
-                // This is a symptom I did something stupid!
-                //arrayMemory.Dispose();
-
-                arrayLength = resultLength;
-                arrayMemory = gpu.ArrayGetMemory(resultDevice, true, false);
-                arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-            }
+            return ReduceHelper(array, op, KernelSequentialReduceIdleThreads, CreateLaunchParamsStridedAccess<T>);
         }
 
         // GPU: Sequential Warp!
         internal static T ComputeGpu4<T>(T[] array, Func<T, T, T> op)
+        {
+            return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
+        }
+
+        // Helpers
+        // Todo: Rename!
+        private static T ReduceHelper<T>(T[] array, Func<T, T, T> op, Action<deviceptr<T>, int, T[], Func<T, T, T>> kernel, Func<int, LaunchParam> launchParamsFactory)
         {
             var gpu = Gpu.Default;
 
@@ -139,13 +53,13 @@ namespace Aggregate
 
             while (true)
             {
-                var launchParams = CreateLaunchParamsStridedAccess<T>(arrayLength);
+                var launchParams = launchParamsFactory(arrayLength);
                 var resultLength = launchParams.GridDim.x;
                 var resultDevice = gpu.Allocate<T>(resultLength);
 
                 // ReSharper disable once AccessToModifiedClosure
                 // ReSharper disable once AccessToModifiedClosure
-                gpu.Launch(() => KernelSequentialReduceIdleThreadsWarp(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
+                gpu.Launch(() => kernel(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
 
                 if (resultLength == 1)
                 {
@@ -165,7 +79,6 @@ namespace Aggregate
             }
         }
 
-        // Helpers
         private static LaunchParam CreateLaunchParamsNonStridedAccess<T>(int length)
         {
             var threads = length < MaxThreads
