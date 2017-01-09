@@ -1,7 +1,4 @@
-﻿using Alea;
-using Alea.CSharp;
-using Alea.Parallel;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -14,7 +11,6 @@ namespace Aggregate
         {
             //const int length = 260000023;
             const int length = 82000015;
-            //const int length = 4000000;
             var data = Enumerable.Range(1, length).Select(x => x % 5).ToArray();
             var expected = data.Sum();
 
@@ -25,8 +21,8 @@ namespace Aggregate
             Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
             Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
 
-            Measure(() => Gpu.Default.Aggregate(data, op), expected, true, length, "GPU: Using Alea Parallel Linq!");
-            Measure(() => AggregateGpuIA.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing! (Loop)");
+            Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Interleaved Addressing!");
+            Measure(() => AggregateGpu.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing!");
             Measure(() => AggregateGpuSA.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing!");
             Measure(() => AggregateGpuSAFB.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing Fully Busy!");
             Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing Fully Busy Unroll!");
@@ -45,11 +41,19 @@ namespace Aggregate
                     ? string.Format(CultureInfo.InvariantCulture, format + " (ms)", w.Elapsed.TotalMilliseconds)
                     : string.Format(CultureInfo.InvariantCulture, format + " (μs)", w.Elapsed.TotalMilliseconds * 1000);
 
-            Func<bool, ConsoleColor> color = error => error
-                ? ConsoleColor.Red 
-                : isGpu 
-                    ? ConsoleColor.Green 
+            Action<bool> consoleColor = error =>
+            {
+                if (error)
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    return;
+                }
+
+                Console.ForegroundColor = isGpu
+                    ? ConsoleColor.Red
                     : ConsoleColor.Cyan;
+            };
 
             Func<Stopwatch, string> bandwidth = w => string.Format(CultureInfo.InvariantCulture, "{0,7:F4} GB/s", (length * sizeof(int)) / (w.Elapsed.TotalMilliseconds * 1000000));
             
@@ -59,14 +63,14 @@ namespace Aggregate
 
             Console.WriteLine(new string('-', 43));
             Console.WriteLine(description);
-            Console.ForegroundColor = color(result1 != expected);
+            consoleColor(result1 != expected);
             Console.WriteLine("{0} - {1} - {2} [Cold]", result1, formatElapsedTime(sw1), bandwidth(sw1));
             Console.ResetColor();
 
             var sw2 = Stopwatch.StartNew();
             var result2 = func();
             sw2.Stop();
-            Console.ForegroundColor = color(result2 != expected);
+            consoleColor(result2 != expected);
             Console.WriteLine("{0} - {1} - {2} [Warm]", result2, formatElapsedTime(sw2), bandwidth(sw2));
             Console.ResetColor();
         }

@@ -58,8 +58,6 @@ namespace Aggregate
                 return ++n;
             };
 
-            var attributes = Gpu.Default.Device.Attributes;
-
             const int maxThreads = 128;
             var threads = length < maxThreads ? np2(length) : maxThreads;
             var blocks = (length + threads - 1) / threads;

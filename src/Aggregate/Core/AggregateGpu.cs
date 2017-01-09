@@ -2,12 +2,18 @@ using System;
 using System.Runtime.InteropServices;
 using Alea;
 using Alea.CSharp;
+using Alea.Parallel;
 
 namespace Aggregate
 {
-    internal static class AggregateGpuIA
+    internal static class AggregateGpu
     {
-
+        // GPU: Using Alea Parallel Linq!
+        internal static T ComputeGpu0<T>(T[] array, Func<T, T, T> op)
+        {
+            return Gpu.Default.Aggregate(array, op);
+        }
+        
         // GPU: Interleaved Addressing! (Loop)
         internal static T ComputeGpu1<T>(T[] array, Func<T, T, T> op)
         {
@@ -25,7 +31,7 @@ namespace Aggregate
 
                 // ReSharper disable once AccessToModifiedClosure
                 // ReSharper disable once AccessToModifiedClosure
-                gpu.Launch(() => Kernel(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
+                gpu.Launch(() => KernelInterleavedAccess(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
 
                 if (resultLength == 1)
                 {
@@ -69,7 +75,7 @@ namespace Aggregate
             return new LaunchParam(blocks, threads, sharedMemory);
         }
 
-        private static void Kernel<T>(deviceptr<T> array, int length, T[] result, Func<T, T, T> op)
+        private static void KernelInterleavedAccess<T>(deviceptr<T> array, int length, T[] result, Func<T, T, T> op)
         {
             var shared = __shared__.ExternArray<T>();
 
