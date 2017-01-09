@@ -21,11 +21,11 @@ namespace Aggregate
             Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
             Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
 
-            Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Interleaved Addressing!");
+            Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Using Alea Parallel Linq!");
             Measure(() => AggregateGpu.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing!");
-            Measure(() => AggregateGpuSA.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing!");
-            Measure(() => AggregateGpuSAFB.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing Fully Busy!");
-            Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, true, length, "GPU: Sequential Addressing Fully Busy Unroll!");
+            Measure(() => AggregateGpu.ComputeGpu2(data, op), expected, true, length, "GPU: Sequential Addressing!");
+            Measure(() => AggregateGpu.ComputeGpu3(data, op), expected, true, length, "GPU: Sequential Reduce Idle Threads!");
+            Measure(() => AggregateGpu.ComputeGpu4(data, op), expected, true, length, "GPU: Sequential Warp!");
             
             Console.WriteLine("Done!");
             Console.ReadLine();

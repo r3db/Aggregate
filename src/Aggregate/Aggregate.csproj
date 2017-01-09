@@ -74,11 +74,8 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\AggregateGpuSA.cs" />
     <Compile Include="Core\AggregateGpu.cs" />
     <Compile Include="Core\AggregateCpu.cs" />
-    <Compile Include="Core\AggregateGpuSAFBU.cs" />
-    <Compile Include="Core\AggregateGpuSAFB.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
