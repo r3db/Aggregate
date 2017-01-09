@@ -11,8 +11,6 @@ namespace Aggregate
 {
     internal static class Aggregate
     {
-        private const int SleepTimeInMilliseconds = 0;
-
         // Done!
         // CPU: Using Sequential Loop!
         internal static T ComputeCpu1<T>(T[] array, Func<T, T, T> op)
@@ -86,8 +84,6 @@ namespace Aggregate
                 InterleavedAddressingKernel(array, result, op);
             }, lp);
 
-            Thread.Sleep(SleepTimeInMilliseconds);
-            Gpu.Default.Synchronize();
             return resultSize > 1 ? ComputeGpu2(result, op) : result[0];
         }
 
@@ -120,8 +116,6 @@ namespace Aggregate
 
                 Gpu.Free(inputDevice);
                 inputDevice = resultDevice;
-                Gpu.Default.Synchronize();
-                Thread.Sleep(SleepTimeInMilliseconds);
             }
         }
 
@@ -138,8 +132,6 @@ namespace Aggregate
                 }
 
                 array = result;
-                Gpu.Default.Synchronize();
-                Thread.Sleep(SleepTimeInMilliseconds);
             }
         }
 
@@ -172,8 +164,6 @@ namespace Aggregate
                 SequentialAddressingKernel(array, result, op);
             }, lp);
 
-            Thread.Sleep(SleepTimeInMilliseconds);
-            Gpu.Default.Synchronize();
             return resultSize > 1 ? ComputeGpu2(result, op) : result[0];
         }
 
@@ -206,8 +196,6 @@ namespace Aggregate
 
                 Gpu.Free(inputDevice);
                 inputDevice = resultDevice;
-                Gpu.Default.Synchronize();
-                Thread.Sleep(SleepTimeInMilliseconds);
             }
         }
 
@@ -224,8 +212,6 @@ namespace Aggregate
                 }
 
                 array = result;
-                Gpu.Default.Synchronize();
-                Thread.Sleep(SleepTimeInMilliseconds);
             }
         }
 
@@ -253,6 +239,8 @@ namespace Aggregate
             var blocks = (length + threads - 1) / threads;
             var sharedMemory = threads <= 32 ? 2 * threads * Marshal.SizeOf<T>() : threads * Marshal.SizeOf<T>();
 
+            //Console.WriteLine("Blocks : {0,5}, Threads: {1,5}, Shared-Memory: {2,5}", blocks, threads, sharedMemory);
+
             return new LaunchParam(blocks, threads, sharedMemory);
         }
 
@@ -276,17 +264,16 @@ namespace Aggregate
             var bid = blockIdx.x;
             var gid = blockDim.x * bid + tid;
 
-            if (tid >= array.Length)
+            if (gid < array.Length)
             {
-                return;
+                shared[tid] = array[gid];
             }
 
-            shared[tid] = array[gid];
             DeviceFunction.SyncThreads();
 
             for (var s = 1; s < blockDim.x; s *= 2)
             {
-                if (tid % (2 * s) == 0)
+                if (tid % (2 * s) == 0 && gid + s < array.Length)
                 {
                     shared[tid] = op(shared[tid], shared[tid + s]);
                 }
@@ -308,17 +295,16 @@ namespace Aggregate
             var bid = blockIdx.x;
             var gid = blockDim.x * bid + tid;
 
-            if (tid >= array.Length)
+            if (gid < array.Length)
             {
-                return;
+                shared[tid] = array[gid];
             }
 
-            shared[tid] = array[gid];
             DeviceFunction.SyncThreads();
 
             for (int s = blockDim.x / 2; s > 0; s >>= 1)
             {
-                if (tid < s)
+                if (tid < s && gid + s < array.Length)
                 {
                     shared[tid] = op(shared[tid], shared[tid + s]);
                 }

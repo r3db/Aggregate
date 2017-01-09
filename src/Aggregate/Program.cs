@@ -24,13 +24,13 @@ namespace Aggregate
             Console.WriteLine(new string('\n', 5));
 
             Measure(() => Aggregate.ComputeGpu1(data, op), expected, "GPU: Using Alea Parallel Linq!");
-            //Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
-            //Measure(() => Aggregate.ComputeGpu3(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
+            Measure(() => Aggregate.ComputeGpu2(data, op), expected, "GPU: Interleaved Addressing! (Recursive)");
+            Measure(() => Aggregate.ComputeGpu3(data, op), expected, "GPU: Interleaved Addressing! (Loop)");
             Measure(() => Aggregate.ComputeGpu4(data, op), expected, "GPU: Interleaved Addressing! (Method)");
 
-            //Measure(() => Aggregate.ComputeGpu5(data, op), expected, "GPU: Sequential Addressing! (Recursive)");
-            //Measure(() => Aggregate.ComputeGpu6(data, op), expected, "GPU: Sequential Addressing! (Loop)");
-            //Measure(() => Aggregate.ComputeGpu7(data, op), expected, "GPU: Sequential Addressing! (Method)");
+            Measure(() => Aggregate.ComputeGpu5(data, op), expected, "GPU: Sequential Addressing! (Recursive)");
+            Measure(() => Aggregate.ComputeGpu6(data, op), expected, "GPU: Sequential Addressing! (Loop)");
+            Measure(() => Aggregate.ComputeGpu7(data, op), expected, "GPU: Sequential Addressing! (Method)");
 
             Console.WriteLine("Done!");
             Console.ReadLine();
