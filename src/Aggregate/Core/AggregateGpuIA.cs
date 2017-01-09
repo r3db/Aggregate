@@ -23,7 +23,7 @@ namespace Aggregate
         // GPU: Interleaved Addressing! (Loop)
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
-            var inputDevice  = Gpu.Default.Allocate<T>(array);
+            var inputDevice  = Gpu.Default.Allocate(array);
 
             while (true)
             {
@@ -34,7 +34,7 @@ namespace Aggregate
 
                 if (Gpu.ArrayGetLength(resultDevice) == 1)
                 {
-                    var result = Gpu.CopyToHost<T>(resultDevice);
+                    var result = Gpu.CopyToHost(resultDevice);
 
                     Gpu.Free(inputDevice);
                     Gpu.Free(resultDevice);

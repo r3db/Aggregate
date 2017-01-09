@@ -1,4 +1,5 @@
 ﻿using Alea;
+using Alea.CSharp;
 using Alea.Parallel;
 using System;
 using System.Diagnostics;
@@ -13,6 +14,7 @@ namespace Aggregate
         {
             //const int length = 260000023;
             const int length = 82000015;
+            //const int length = 4000000;
             var data = Enumerable.Range(1, length).Select(x => x % 5).ToArray();
             var expected = data.Sum();
 
@@ -34,8 +36,11 @@ namespace Aggregate
             Measure(() => AggregateGpuSAFB.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy! (Recursive)");
             Measure(() => AggregateGpuSAFB.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing Fully Busy! (Loop)");
 
-            Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy Unroll! (Recursive)");
-            Measure(() => AggregateGpuSAFBU.ComputeGpu2(data, op), expected, "GPU: Sequential Addressing Fully Busy Unroll! (Loop)");
+            Measure(() => AggregateGpuSAFBU.ComputeGpu1(data, op), expected, "GPU: Sequential Addressing Fully Busy Unroll! (Loop)");
+
+            //Measure(() => AggregateGpuSAFBU.ComputeGpu3(data, op), expected, "XXX");
+
+
 
             Console.WriteLine("Done!");
             Console.ReadLine();
