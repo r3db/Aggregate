@@ -55,23 +55,23 @@ namespace Aggregate
                     : ConsoleColor.Cyan;
             };
 
-            Func<Stopwatch, string> bandwidth = w => string.Format(CultureInfo.InvariantCulture, "{0,7:F4} GB/s", (length * sizeof(int)) / (w.Elapsed.TotalMilliseconds * 1000000));
+            Func<Stopwatch, string> bandwidth = w => string.Format(CultureInfo.InvariantCulture, "{0,8:F4} GB/s", (length * sizeof(int)) / (w.Elapsed.TotalMilliseconds * 1000000));
             
             var sw1 = Stopwatch.StartNew();
             var result1 = func();
             sw1.Stop();
 
-            Console.WriteLine(new string('-', 43));
+            Console.WriteLine(new string('-', 49));
             Console.WriteLine(description);
             consoleColor(result1 != expected);
-            Console.WriteLine("{0} - {1} - {2} [Cold]", result1, formatElapsedTime(sw1), bandwidth(sw1));
+            Console.WriteLine("{0,9} - {1} - {2} [Cold]", result1, formatElapsedTime(sw1), bandwidth(sw1));
             Console.ResetColor();
 
             var sw2 = Stopwatch.StartNew();
             var result2 = func();
             sw2.Stop();
             consoleColor(result2 != expected);
-            Console.WriteLine("{0} - {1} - {2} [Warm]", result2, formatElapsedTime(sw2), bandwidth(sw2));
+            Console.WriteLine("{0,9} - {1} - {2} [Warm]", result2, formatElapsedTime(sw2), bandwidth(sw2));
             Console.ResetColor();
         }
     }
