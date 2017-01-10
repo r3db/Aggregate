@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Alea;
 using Alea.CSharp;
@@ -57,17 +58,18 @@ namespace Aggregate
                 var resultLength = launchParams.GridDim.x;
                 var resultDevice = gpu.Allocate<T>(resultLength);
 
+                // I'm allowed to use the CPU.
+                if (arrayLength < CpuThreashold)
+                {
+                    using (var m = arrayMemory as Memory<T>)
+                    {
+                        return Gpu.CopyToHost(m).AsParallel().Aggregate(op);
+                    }
+                }
+
                 // ReSharper disable once AccessToModifiedClosure
                 // ReSharper disable once AccessToModifiedClosure
                 gpu.Launch(() => kernel(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
-
-                if (resultLength == 1)
-                {
-                    arrayMemory.Dispose();
-                    var result = Gpu.CopyToHost(resultDevice);
-                    Gpu.Free(resultDevice);
-                    return result[0];
-                }
 
                 // I should be able to dispose at this point!
                 // This is a symptom I did something stupid!
