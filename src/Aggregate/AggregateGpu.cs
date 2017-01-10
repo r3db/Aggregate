@@ -43,6 +43,7 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
+        // Todo: BugFix!
         // Helpers
         private static T ReduceHelper<T>(T[] array, Func<T, T, T> op, Action<deviceptr<T>, int, T[], Func<T, T, T>> kernel, Func<int, LaunchParam> launchParamsFactory)
         {
