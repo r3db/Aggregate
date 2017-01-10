@@ -10,32 +10,33 @@ namespace Aggregate
     {
         private const int WarpSize = 32;
         private const int MaxThreads = 128;
+        private const int CpuThreashold = 1024;
 
-        // GPU: Using Alea Parallel Linq!
+        // Using Alea Parallel Linq!
         internal static T ComputeGpu0<T>(T[] array, Func<T, T, T> op)
         {
             return Gpu.Default.Aggregate(array, op);
         }
         
-        // GPU: Interleaved Addressing!
+        // Interleaved Addressing!
         internal static T ComputeGpu1<T>(T[] array, Func<T, T, T> op)
         {
             return ReduceHelper(array, op, KernelInterleavedAccess, CreateLaunchParamsNonStridedAccess<T>);
         }
 
-        // GPU: Sequential Addressing!
+        // Sequential Addressing!
         internal static T ComputeGpu2<T>(T[] array, Func<T, T, T> op)
         {
             return ReduceHelper(array, op, KernelSequentialAccess, CreateLaunchParamsNonStridedAccess<T>);
         }
 
-        // GPU: Sequential Reduce Idle Threads!
+        // Sequential Reduce Idle Threads!
         internal static T ComputeGpu3<T>(T[] array, Func<T, T, T> op)
         {
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreads, CreateLaunchParamsStridedAccess<T>);
         }
 
-        // GPU: Sequential Warp!
+        // Sequential Warp!
         internal static T ComputeGpu4<T>(T[] array, Func<T, T, T> op)
         {
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
