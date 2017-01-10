@@ -88,10 +88,7 @@ namespace Aggregate
                 : MaxThreads;
 
             var blocks = (length + threads - 1) / threads;
-
-            var sharedMemory = threads <= WarpSize 
-                ? 2 * threads * Marshal.SizeOf<T>() 
-                : threads * Marshal.SizeOf<T>();
+            var sharedMemory = threads * Marshal.SizeOf<T>();
 
             PrintLaunchParamInformation(length, blocks, threads, sharedMemory);
             return new LaunchParam(blocks, threads, sharedMemory);
@@ -103,12 +100,8 @@ namespace Aggregate
                 ? NextPowerOfTwo((length + 1) / 2)
                 : MaxThreads;
 
-            var stridedThreads = 2 * threads;
-            var blocks = (length + stridedThreads - 1) / stridedThreads;
-
-            var sharedMemory = threads <= WarpSize 
-                ? stridedThreads * Marshal.SizeOf<T>() 
-                : threads * Marshal.SizeOf<T>();
+            var blocks = (length + 2 * threads - 1) / (2 * threads);
+            var sharedMemory = threads * Marshal.SizeOf<T>();
 
             PrintLaunchParamInformation(length, blocks, threads, sharedMemory);
             return new LaunchParam(blocks, threads, sharedMemory);
