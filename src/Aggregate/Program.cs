@@ -10,23 +10,25 @@ namespace Aggregate
         private static void Main()
         {
             //const int length = 260000023;
-            const int length = 82000015;
+            //const int length = 82000015;
+            const int length = 259;
             var data = Enumerable.Range(1, length).Select(x => x % 8).ToArray();
             var expected = data.Sum();
 
             Func<int, int, int> op = (a, b) => a + b;
 
-            Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Using Sequential Loop!");
-            Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Using Linq!");
-            Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
-            Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
+            //Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Using Sequential Loop!");
+            //Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Using Linq!");
+            //Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
+            //Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
 
             Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Using Alea Parallel Linq!");
             Measure(() => AggregateGpu.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing!");
             Measure(() => AggregateGpu.ComputeGpu2(data, op), expected, true, length, "GPU: Sequential Addressing!");
             Measure(() => AggregateGpu.ComputeGpu3(data, op), expected, true, length, "GPU: Sequential Reduce Idle Threads!");
             Measure(() => AggregateGpu.ComputeGpu4(data, op), expected, true, length, "GPU: Sequential Warp!");
-            
+            Measure(() => AggregateGpu.ComputeGpu5(data, op), expected, true, length, "GPU: Fixed Block and Thread!");
+
             Console.WriteLine("Done!");
             Console.ReadLine();
         }

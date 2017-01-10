@@ -43,6 +43,27 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
+        // Fixed Block and Thread!
+        internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
+        {
+            var gpu = Gpu.Default;
+
+            var arrayLength = array.Length;
+            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
+            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
+
+            var launchParams = new LaunchParam(1, 64);
+            var resultLength = launchParams.GridDim.x;
+            var resultDevice = gpu.Allocate<T>(resultLength);
+
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
+            gpu.Synchronize();
+
+            var result = Gpu.CopyToHost(resultDevice);
+
+            return result.Aggregate(op);
+        }
+
         // Todo: BugFix!
         // Helpers
         private static T ReduceHelper<T>(T[] array, Func<T, T, T> op, Action<deviceptr<T>, int, T[], Func<T, T, T>> kernel, Func<int, LaunchParam> launchParamsFactory)
@@ -268,6 +289,49 @@ namespace Aggregate
             {
                 result[bid] = shared[0];
             }
+        }
+
+        // ReSharper disable once SuggestBaseTypeForParameter
+        private static void KernelSequentialReduceIdleThreadsWarpMultiple<T>(deviceptr<T> array, int length, T[] result, Func<T, T, T> op)
+        {
+            var tid = threadIdx.x;
+            var bid = blockIdx.x;
+            var bdm = blockDim.x;
+            var gid = bdm * bid + tid;
+            //var xxx = bdm * bid + tid;
+
+            // Todo: This is a bad idea, 'default(T)', think of n * 0 => This should be the seed/accumulator provided by the user!
+            var accumulator = default(T);
+
+            while (gid < length)
+            {
+                accumulator = op(accumulator, array[gid]);
+
+                //if (xxx == 63)
+                //{
+                //    Console.WriteLine("Index: {0}, Value: {1}, Block => {2}", gid, accumulator, blockIdx.x);
+                //}
+
+                gid += gridDim.x * blockDim.x;
+            }
+
+            // Note: It works at least until here!
+
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 16));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 8));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 4));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 2));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 1));
+
+            var shared = __shared__.Array<T>(2 * 64);
+
+            if (tid % 32 == 0)
+            {
+                shared[tid / 32] = accumulator;
+                //Console.WriteLine("Index: {0}, Value: {1}", tid / 32, accumulator);
+            }
+
+            DeviceFunction.SyncThreads();
         }
     }
 }
