@@ -42,7 +42,6 @@ namespace Aggregate
         }
 
         // Helpers
-        // Todo: Rename!
         private static T ReduceHelper<T>(T[] array, Func<T, T, T> op, Action<deviceptr<T>, int, T[], Func<T, T, T>> kernel, Func<int, LaunchParam> launchParamsFactory)
         {
             var gpu = Gpu.Default;
