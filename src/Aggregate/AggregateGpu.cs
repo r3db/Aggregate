@@ -298,7 +298,6 @@ namespace Aggregate
             var bid = blockIdx.x;
             var bdm = blockDim.x;
             var gid = bdm * bid + tid;
-            //var xxx = bdm * bid + tid;
 
             // Todo: 'default(T)' is a bad idea, think of (n * 0) => The accumulator's initial value should be provided by the user!
             var accumulator = default(T);
@@ -306,12 +305,6 @@ namespace Aggregate
             while (gid < length)
             {
                 accumulator = op(accumulator, array[gid]);
-
-                //if (xxx == 63)
-                //{
-                //    Console.WriteLine("Index: {0}, Value: {1}, Block => {2}", gid, accumulator, blockIdx.x);
-                //}
-
                 gid += gridDim.x * blockDim.x;
             }
 
