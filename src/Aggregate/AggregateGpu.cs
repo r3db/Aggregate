@@ -310,7 +310,7 @@ namespace Aggregate
 
             // Note: It works at least until here!
             
-            // Todo: How many blocks do I have?
+            // Todo: How many blocks do I have? => The number of blocks I created in LP!
 
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 16));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 8));
