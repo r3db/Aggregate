@@ -300,7 +300,7 @@ namespace Aggregate
             var gid = bdm * bid + tid;
             //var xxx = bdm * bid + tid;
 
-            // Todo: This is a bad idea, 'default(T)', think of n * 0 => This should be the seed/accumulator provided by the user!
+            // Todo: 'default(T)' is a bad idea, think of (n * 0) => The accumulator's initial value should be provided by the user!
             var accumulator = default(T);
 
             while (gid < length)
@@ -316,6 +316,8 @@ namespace Aggregate
             }
 
             // Note: It works at least until here!
+            
+            // Todo: How many blocks do I have?
 
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 16));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 8));
