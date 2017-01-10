@@ -196,7 +196,9 @@ namespace Aggregate
             var bid = blockIdx.x;
             var gid = 2 * blockDim.x * bid + tid;
 
-            shared[tid] = (gid < length && gid + blockDim.x < length) ? op(array[gid], array[gid + blockDim.x]) : array[gid];
+            shared[tid] = (gid < length && gid + blockDim.x < length)
+                ? op(array[gid], array[gid + blockDim.x])
+                : array[gid];
 
             DeviceFunction.SyncThreads();
 
@@ -226,7 +228,9 @@ namespace Aggregate
             var bdm = blockDim.x;
             var gid = 2 * bdm * bid + tid;
 
-            shared[tid] = (gid < length && gid + bdm < length) ? op(array[gid], array[gid + bdm]) : array[gid];
+            shared[tid] = (gid < length && gid + bdm < length)
+                ? op(array[gid], array[gid + bdm])
+                : array[gid];
 
             DeviceFunction.SyncThreads();
 
