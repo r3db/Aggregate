@@ -57,7 +57,6 @@ namespace Aggregate
             var resultDevice = gpu.Allocate<T>(resultLength);
 
             gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
-            gpu.Synchronize();
 
             var result = Gpu.CopyToHost(resultDevice);
 
