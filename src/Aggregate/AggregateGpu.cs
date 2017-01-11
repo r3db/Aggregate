@@ -52,7 +52,7 @@ namespace Aggregate
             var arrayMemory = gpu.ArrayGetMemory(array, true, false);
             var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
 
-            var launchParams = new LaunchParam(2, 64);
+            var launchParams = new LaunchParam(256, 32);
             var resultLength = launchParams.GridDim.x;
             var resultDevice = gpu.Allocate<T>(resultLength);
 
@@ -309,24 +309,31 @@ namespace Aggregate
             }
 
             // Note: It works at least until here!
-            
             // Todo: How many blocks do I have? => The number of blocks I created in LP!
-
+            
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 16));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 8));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 4));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 2));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 1));
 
-            var shared = __shared__.Array<T>(2 * 64);
-
-            if (tid % 32 == 0)
+            if (tid == 0)
             {
-                shared[tid / 32] = accumulator;
-                //Console.WriteLine("Index: {0}, Value: {1}", tid / 32, accumulator);
+                result[bid] = accumulator;
+                //Console.WriteLine("Value: {0}, BI {1}: ", accumulator, bid);
             }
 
-            DeviceFunction.SyncThreads();
+            ////Console.WriteLine("Index: {0}, Value: {1}", tid / 32, accumulator);
+
+            //var shared = __shared__.Array<T>(2 * 64);
+
+            //if (tid % 32 == 0)
+            //{
+            //    shared[tid / 32] = accumulator;
+            //    //Console.WriteLine("Index: {0}, Value: {1}", tid / 32, accumulator);
+            //}
+
+            //DeviceFunction.SyncThreads();
         }
     }
 }
