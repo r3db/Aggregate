@@ -43,14 +43,35 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
-        // Todo: Fix!
+        // I'm sure memory management is far from optimal!
         // Fixed Block and Thread!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
-            var result1 = Inline(array, 256, op);
-            var result2 = Inline(result1, 1, op);
+            const int dimGrid = 256;
 
-            return result2[0];
+            var gpu = Gpu.Default;
+
+            var inputLength = array.Length;
+            var inputMemory = gpu.ArrayGetMemory(array, true, false);
+            var inputDevPtr = new deviceptr<T>(inputMemory.Handle);
+
+            var resultMemory = gpu.Allocate<T>(dimGrid);
+
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, inputLength, resultMemory, op), new LaunchParam(dimGrid, 64));
+
+            // ----------------------------------
+            // ----------------------------------
+            // ----------------------------------
+            // ----------------------------------
+
+            inputMemory = gpu.ArrayGetMemory(resultMemory, true, false);
+            inputDevPtr = new deviceptr<T>(inputMemory.Handle);
+
+            resultMemory = gpu.Allocate<T>(dimGrid);
+
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, dimGrid, resultMemory, op), new LaunchParam(1, 64));
+
+            return Gpu.CopyToHost(resultMemory)[0];
         }
 
         private static T[] Inline<T>(T[] array, int dimGrid, Func<T, T, T> op)
