@@ -47,19 +47,19 @@ namespace Aggregate
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
             var gpu = Gpu.Default;
+            var launchParams = new LaunchParam(256, 32);
 
             var arrayLength = array.Length;
             var arrayMemory = gpu.ArrayGetMemory(array, true, false);
             var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
 
-            var launchParams = new LaunchParam(256, 32);
             var resultLength = launchParams.GridDim.x;
-            var resultDevice = gpu.Allocate<T>(resultLength);
+            var resultMemory = gpu.AllocateDevice<T>(resultLength);
+            var resultDevPtr = new deviceptr<T>(resultMemory.Handle);
 
-            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(arrayDevPtr, arrayLength, resultDevice, op), launchParams);
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultipleNaive(arrayDevPtr, arrayLength, resultDevPtr, op), launchParams);
 
-            var result = Gpu.CopyToHost(resultDevice);
-
+            var result = Gpu.CopyToHost(resultMemory);
             return result.Aggregate(op);
         }
 
@@ -291,7 +291,7 @@ namespace Aggregate
         }
 
         // ReSharper disable once SuggestBaseTypeForParameter
-        private static void KernelSequentialReduceIdleThreadsWarpMultiple<T>(deviceptr<T> array, int length, T[] result, Func<T, T, T> op)
+        private static void KernelSequentialReduceIdleThreadsWarpMultipleNaive<T>(deviceptr<T> array, int length, deviceptr<T> result, Func<T, T, T> op)
         {
             var tid = threadIdx.x;
             var bid = blockIdx.x;
