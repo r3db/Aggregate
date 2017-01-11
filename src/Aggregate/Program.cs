@@ -16,10 +16,10 @@ namespace Aggregate
 
             Func<int, int, int> op = (a, b) => a + b;
 
-            //Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Using Sequential Loop!");
-            //Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Using Linq!");
-            //Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
-            //Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
+            Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Using Sequential Loop!");
+            Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Using Linq!");
+            Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
+            Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
 
             Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Using Alea Parallel Linq!");
             Measure(() => AggregateGpu.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing!");

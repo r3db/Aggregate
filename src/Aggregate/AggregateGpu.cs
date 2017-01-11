@@ -47,7 +47,7 @@ namespace Aggregate
         // Fixed Block and Thread!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
-            const int dimGrid = 128;
+            const int dimGrid = 256;
             const int blockDim = 64;
 
             var gpu = Gpu.Default;
