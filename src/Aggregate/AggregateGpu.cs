@@ -48,7 +48,7 @@ namespace Aggregate
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
             const int dimGrid = 256;
-            const int blockDim = 64;
+            const int blockDim = 128;
 
             var gpu = Gpu.Default;
 
@@ -321,7 +321,7 @@ namespace Aggregate
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator,  2));
             accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator,  1));
 
-            var shared = __shared__.Array<T>(2);
+            var shared = __shared__.Array<T>(4);
 
             if (tid % WarpSize == 0)
             {
@@ -332,7 +332,7 @@ namespace Aggregate
             
             if (tid == 0)
             {
-                result[bid] = op(shared[0], shared[1]);
+                result[bid] = op(op(shared[0], shared[1]), op(shared[2], shared[3]));
             }
         }
     }
