@@ -27,7 +27,8 @@ namespace Aggregate
             Measure(() => AggregateGpu.ComputeGpu2(data, op), expected, true, length, "GPU: Sequential Addressing!");
             Measure(() => AggregateGpu.ComputeGpu3(data, op), expected, true, length, "GPU: Sequential Reduce Idle Threads!");
             Measure(() => AggregateGpu.ComputeGpu4(data, op), expected, true, length, "GPU: Sequential Warp!");
-            Measure(() => AggregateGpu.ComputeGpu5(data, op), expected, true, length, "GPU: Fixed Block and Thread!");
+            Measure(() => AggregateGpu.ComputeGpu5(data, op), expected, true, length, "GPU: Fixed Block and Thread! (Naive)");
+            Measure(() => AggregateGpu.ComputeGpu6(data, op), expected, true, length, "GPU: Fixed Block and Thread!");
 
             Console.WriteLine("Done!");
             Console.ReadLine();

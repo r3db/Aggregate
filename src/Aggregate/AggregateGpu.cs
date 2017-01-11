@@ -43,7 +43,7 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
-        // Fixed Block and Thread!
+        // Fixed Block and Thread (Naive)!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
             var gpu = Gpu.Default;
@@ -59,8 +59,26 @@ namespace Aggregate
 
             gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultipleNaive(arrayDevPtr, arrayLength, resultDevPtr, op), launchParams);
 
-            var result = Gpu.CopyToHost(resultMemory);
-            return result.Aggregate(op);
+            return Gpu.CopyToHost(resultMemory).Aggregate(op);
+        }
+
+        // Fixed Block and Thread (Naive)!
+        internal static T ComputeGpu6<T>(T[] array, Func<T, T, T> op)
+        {
+            var gpu = Gpu.Default;
+            var launchParams = new LaunchParam(256, 64);
+
+            var arrayLength = array.Length;
+            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
+            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
+
+            var resultLength = launchParams.GridDim.x;
+            var resultMemory = gpu.AllocateDevice<T>(resultLength);
+            var resultDevPtr = new deviceptr<T>(resultMemory.Handle);
+
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(arrayDevPtr, arrayLength, resultDevPtr, op), launchParams);
+
+            return Gpu.CopyToHost(resultMemory).Aggregate(op);
         }
 
         // Todo: BugFix!
@@ -319,6 +337,44 @@ namespace Aggregate
             if (tid == 0)
             {
                 result[bid] = accumulator;
+            }
+        }
+
+        // ReSharper disable once SuggestBaseTypeForParameter
+        private static void KernelSequentialReduceIdleThreadsWarpMultiple<T>(deviceptr<T> array, int length, deviceptr<T> result, Func<T, T, T> op)
+        {
+            var tid = threadIdx.x;
+            var bid = blockIdx.x;
+            var bdm = blockDim.x;
+            var gid = bdm * bid + tid;
+
+            // Todo: 'default(T)' is a bad idea, think of (n * 0) => The accumulator's initial value should be provided by the user!
+            var accumulator = default(T);
+
+            while (gid < length)
+            {
+                accumulator = op(accumulator, array[gid]);
+                gid += gridDim.x * bdm;
+            }
+
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 16));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator,  8));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator,  4));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator,  2));
+            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator,  1));
+
+            var shared = __shared__.Array<T>(2);
+
+            if (tid % 32 == 0)
+            {
+                shared[tid / 32] = accumulator;
+            }
+
+            DeviceFunction.SyncThreads();
+            
+            if (tid == 0)
+            {
+                result[bid] = op(shared[0], shared[1]);
             }
         }
     }
