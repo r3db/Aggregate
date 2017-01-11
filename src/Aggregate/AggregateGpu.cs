@@ -75,22 +75,7 @@ namespace Aggregate
             return Gpu.CopyToHost(resultMemory)[0];
         }
 
-        private static T[] Inline<T>(T[] array, int dimGrid, Func<T, T, T> op)
-        {
-            var gpu = Gpu.Default;
-
-            var inputLength = array.Length;
-            var inputMemory = gpu.ArrayGetMemory(array, true, false);
-            var inputDevPtr = new deviceptr<T>(inputMemory.Handle);
-
-            var resultMemory = gpu.Allocate<T>(dimGrid);
-
-            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, inputLength, resultMemory, op), new LaunchParam(dimGrid, 64));
-
-            return Gpu.CopyToHost(resultMemory);
-        }
-
-        // Todo: BugFix!
+        // Todo: BugFix (Memory)!
         // Helpers
         private static T ReduceHelper<T>(T[] array, Func<T, T, T> op, Action<deviceptr<T>, int, T[], Func<T, T, T>> kernel, Func<int, LaunchParam> launchParamsFactory)
         {
