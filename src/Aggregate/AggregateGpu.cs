@@ -52,7 +52,7 @@ namespace Aggregate
             var arrayMemory = gpu.ArrayGetMemory(array, true, false);
             var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
 
-            var launchParams = new LaunchParam(1, 64);
+            var launchParams = new LaunchParam(2, 64);
             var resultLength = launchParams.GridDim.x;
             var resultDevice = gpu.Allocate<T>(resultLength);
 
