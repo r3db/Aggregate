@@ -43,24 +43,30 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
+        // Todo: Fix!
         // Fixed Block and Thread!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
+            var result1 = Inline(array, 256, op);
+            var result2 = Inline(result1, 1, op);
+
+            return result2[0];
+        }
+
+        private static T[] Inline<T>(T[] array, int dimGrid, Func<T, T, T> op)
+        {
             var gpu = Gpu.Default;
-            var launchParams = new LaunchParam(256, 64);
 
-            var arrayLength = array.Length;
-            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
-            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
+            var inputLength = array.Length;
+            var inputMemory = gpu.ArrayGetMemory(array, true, false);
+            var inputDevPtr = new deviceptr<T>(inputMemory.Handle);
 
-            var resultLength = launchParams.GridDim.x;
-            var resultMemory = gpu.AllocateDevice<T>(resultLength);
+            var resultMemory = gpu.AllocateDevice<T>(dimGrid);
             var resultDevPtr = new deviceptr<T>(resultMemory.Handle);
 
-            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(arrayDevPtr, arrayLength, resultDevPtr, op), launchParams);
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, inputLength, resultDevPtr, op), new LaunchParam(dimGrid, 64));
 
-            var copyToHost = Gpu.CopyToHost(resultMemory);
-            return copyToHost.Aggregate(op);
+            return Gpu.CopyToHost(resultMemory);
         }
 
         // Todo: BugFix!
@@ -291,38 +297,6 @@ namespace Aggregate
         }
 
         // ReSharper disable once SuggestBaseTypeForParameter
-        private static void KernelSequentialReduceIdleThreadsWarpMultipleNaive<T>(deviceptr<T> array, int length, deviceptr<T> result, Func<T, T, T> op)
-        {
-            var tid = threadIdx.x;
-            var bid = blockIdx.x;
-            var bdm = blockDim.x;
-            var gid = bdm * bid + tid;
-
-            // Todo: 'default(T)' is a bad idea, think of (n * 0) => The accumulator's initial value should be provided by the user!
-            var accumulator = default(T);
-
-            while (gid < length)
-            {
-                accumulator = op(accumulator, array[gid]);
-                gid += gridDim.x * bdm;
-            }
-
-            // Note: It works at least until here!
-            // Todo: How many blocks do I have? => The number of blocks I created in LP!
-            
-            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 16));
-            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 8));
-            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 4));
-            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 2));
-            accumulator = op(accumulator, DeviceFunction.ShuffleDown(accumulator, 1));
-
-            if (tid == 0)
-            {
-                result[bid] = accumulator;
-            }
-        }
-
-        // ReSharper disable once SuggestBaseTypeForParameter
         private static void KernelSequentialReduceIdleThreadsWarpMultiple<T>(deviceptr<T> array, int length, deviceptr<T> result, Func<T, T, T> op)
         {
             var tid = threadIdx.x;
@@ -347,9 +321,9 @@ namespace Aggregate
 
             var shared = __shared__.Array<T>(2);
 
-            if (tid % 32 == 0)
+            if (tid % WarpSize == 0)
             {
-                shared[tid / 32] = accumulator;
+                shared[tid / WarpSize] = accumulator;
             }
 
             DeviceFunction.SyncThreads();
