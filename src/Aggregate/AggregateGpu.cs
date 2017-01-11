@@ -43,6 +43,7 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
+        // Link: https://mail.google.com/mail/u/0/#inbox/1598d0b3b2850009?projector=1
         // I'm sure memory management is far from optimal!
         // Fixed Block and Thread!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
