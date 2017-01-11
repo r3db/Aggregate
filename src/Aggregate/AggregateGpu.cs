@@ -43,27 +43,8 @@ namespace Aggregate
             return ReduceHelper(array, op, KernelSequentialReduceIdleThreadsWarp, CreateLaunchParamsStridedAccess<T>);
         }
 
-        // Fixed Block and Thread (Naive)!
+        // Fixed Block and Thread!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
-        {
-            var gpu = Gpu.Default;
-            var launchParams = new LaunchParam(256, 32);
-
-            var arrayLength = array.Length;
-            var arrayMemory = gpu.ArrayGetMemory(array, true, false);
-            var arrayDevPtr = new deviceptr<T>(arrayMemory.Handle);
-
-            var resultLength = launchParams.GridDim.x;
-            var resultMemory = gpu.AllocateDevice<T>(resultLength);
-            var resultDevPtr = new deviceptr<T>(resultMemory.Handle);
-
-            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultipleNaive(arrayDevPtr, arrayLength, resultDevPtr, op), launchParams);
-
-            return Gpu.CopyToHost(resultMemory).Aggregate(op);
-        }
-
-        // Fixed Block and Thread (Naive)!
-        internal static T ComputeGpu6<T>(T[] array, Func<T, T, T> op)
         {
             var gpu = Gpu.Default;
             var launchParams = new LaunchParam(256, 64);
@@ -78,7 +59,8 @@ namespace Aggregate
 
             gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(arrayDevPtr, arrayLength, resultDevPtr, op), launchParams);
 
-            return Gpu.CopyToHost(resultMemory).Aggregate(op);
+            var copyToHost = Gpu.CopyToHost(resultMemory);
+            return copyToHost.Aggregate(op);
         }
 
         // Todo: BugFix!
