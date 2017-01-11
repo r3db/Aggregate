@@ -305,7 +305,7 @@ namespace Aggregate
             while (gid < length)
             {
                 accumulator = op(accumulator, array[gid]);
-                gid += gridDim.x * blockDim.x;
+                gid += gridDim.x * bdm;
             }
 
             // Note: It works at least until here!
@@ -320,20 +320,7 @@ namespace Aggregate
             if (tid == 0)
             {
                 result[bid] = accumulator;
-                //Console.WriteLine("Value: {0}, BI {1}: ", accumulator, bid);
             }
-
-            ////Console.WriteLine("Index: {0}, Value: {1}", tid / 32, accumulator);
-
-            //var shared = __shared__.Array<T>(2 * 64);
-
-            //if (tid % 32 == 0)
-            //{
-            //    shared[tid / 32] = accumulator;
-            //    //Console.WriteLine("Index: {0}, Value: {1}", tid / 32, accumulator);
-            //}
-
-            //DeviceFunction.SyncThreads();
         }
     }
 }
