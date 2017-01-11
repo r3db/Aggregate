@@ -47,7 +47,7 @@ namespace Aggregate
         // Fixed Block and Thread!
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
-            const int dimGrid = 256;
+            const int dimGrid = 128;
             const int blockDim = 64;
 
             var gpu = Gpu.Default;
@@ -71,7 +71,7 @@ namespace Aggregate
             return Gpu.CopyToHost(resultMemory)[0];
         }
 
-        // Todo: BugFix (Memory)!
+        // I'm sure memory management is far from optimal!
         // Helpers
         private static T ReduceHelper<T>(T[] array, Func<T, T, T> op, Action<deviceptr<T>, int, T[], Func<T, T, T>> kernel, Func<int, LaunchParam> launchParamsFactory)
         {
