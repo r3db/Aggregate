@@ -48,6 +48,7 @@ namespace Aggregate
         internal static T ComputeGpu5<T>(T[] array, Func<T, T, T> op)
         {
             const int dimGrid = 256;
+            const int blockDim = 64;
 
             var gpu = Gpu.Default;
 
@@ -57,7 +58,7 @@ namespace Aggregate
 
             var resultMemory = gpu.Allocate<T>(dimGrid);
 
-            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, inputLength, resultMemory, op), new LaunchParam(dimGrid, 64));
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, inputLength, resultMemory, op), new LaunchParam(dimGrid, blockDim));
 
             // ----------------------------------
             // ----------------------------------
@@ -69,7 +70,7 @@ namespace Aggregate
 
             resultMemory = gpu.Allocate<T>(dimGrid);
 
-            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, dimGrid, resultMemory, op), new LaunchParam(1, 64));
+            gpu.Launch(() => KernelSequentialReduceIdleThreadsWarpMultiple(inputDevPtr, dimGrid, resultMemory, op), new LaunchParam(1, blockDim));
 
             return Gpu.CopyToHost(resultMemory)[0];
         }
