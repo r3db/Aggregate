@@ -13,7 +13,7 @@ namespace Aggregate
         private const int MaxThreads = 128;
         private const int CpuThreashold = 1024;
 
-        // Using Alea Parallel Linq!
+        // Alea Parallel Linq!
         internal static T ComputeGpu0<T>(T[] array, Func<T, T, T> op)
         {
             return Gpu.Default.Aggregate(array, op);

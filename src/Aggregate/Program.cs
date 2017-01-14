@@ -16,12 +16,12 @@ namespace Aggregate
 
             Func<int, int, int> op = (a, b) => a + b;
 
-            Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Using Sequential Loop!");
-            Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Using Linq!");
-            Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Using Parallel ForEach!");
-            Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Using Parallel Linq!");
+            Measure(() => AggregateCpu.Compute1(data, op), expected, false, length, "CPU: Sequential Loop!");
+            Measure(() => AggregateCpu.Compute2(data, op), expected, false, length, "CPU: Linq!");
+            Measure(() => AggregateCpu.Compute3(data, op), expected, false, length, "CPU: Parallel ForEach!");
+            Measure(() => AggregateCpu.Compute4(data, op), expected, false, length, "CPU: Parallel Linq!");
 
-            Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Using Alea Parallel Linq!");
+            Measure(() => AggregateGpu.ComputeGpu0(data, op), expected, true, length, "GPU: Alea Parallel Linq!");
             Measure(() => AggregateGpu.ComputeGpu1(data, op), expected, true, length, "GPU: Interleaved Addressing!");
             Measure(() => AggregateGpu.ComputeGpu2(data, op), expected, true, length, "GPU: Sequential Addressing!");
             Measure(() => AggregateGpu.ComputeGpu3(data, op), expected, true, length, "GPU: Sequential Reduce Idle Threads!");

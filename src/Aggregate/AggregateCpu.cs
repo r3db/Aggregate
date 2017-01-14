@@ -6,7 +6,7 @@ namespace Aggregate
 {
     internal static class AggregateCpu
     {
-        // Using Sequential Loop!
+        // Sequential Loop!
         internal static T Compute1<T>(T[] array, Func<T, T, T> op)
         {
             var result = default(T);
@@ -21,14 +21,14 @@ namespace Aggregate
             return result;
         }
 
-        // Using Linq!
+        // Linq!
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
         internal static T Compute2<T>(T[] array, Func<T, T, T> op)
         {
             return array.Aggregate(op);
         }
 
-        // Using Parallel ForEach!
+        // Parallel ForEach!
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
         internal static T Compute3<T>(T[] array, Func<T, T, T> op)
         {
@@ -47,7 +47,7 @@ namespace Aggregate
             return result;
         }
 
-        // Using Parallel Linq!
+        // Parallel Linq!
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
         internal static T Compute4<T>(T[] array, Func<T, T, T> op)
         {
